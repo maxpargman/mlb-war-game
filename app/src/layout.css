@@ -14,19 +14,17 @@
   }
 }
 
-/* Pick panel list: constrained height with scroll */
+/* Pick panel: fixed-height results area so lineup cards don't move */
+.pick-results {
+  height: 175px;
+  overflow-y: auto;
+}
+
+/* Pick panel list */
 .pick-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-@media (max-width: 600px) {
-  .pick-list {
-    max-height: 140px;
-  }
 }
 
 /* Top bar: fixed three-column grid so center never shifts with team name length */

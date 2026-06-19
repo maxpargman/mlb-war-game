@@ -59,19 +59,21 @@ export default function PickPanel({ state, onPick }: Props) {
         autoFocus
       />
 
-      {available.length === 0 ? (
-        <p style={styles.empty}>No eligible players — will reroll team.</p>
-      ) : !query.trim() ? (
-        <p style={styles.empty}>Start typing a name to search…</p>
-      ) : filtered.length === 0 ? (
-        <p style={styles.empty}>No players match "{query}"</p>
-      ) : (
-        <ul className="pick-list" style={styles.list}>
-          {filtered.map(p => (
-            <PlayerRow key={`${p.id}|${p.pos}`} player={p} onPick={handlePick} />
-          ))}
-        </ul>
-      )}
+      <div className="pick-results">
+        {available.length === 0 ? (
+          <p style={styles.empty}>No eligible players — will reroll team.</p>
+        ) : !query.trim() ? (
+          <p style={styles.empty}>Start typing a name to search…</p>
+        ) : filtered.length === 0 ? (
+          <p style={styles.empty}>No players match "{query}"</p>
+        ) : (
+          <ul className="pick-list" style={styles.list}>
+            {filtered.map(p => (
+              <PlayerRow key={`${p.id}|${p.pos}`} player={p} onPick={handlePick} />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }
