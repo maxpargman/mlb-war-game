@@ -1,4 +1,4 @@
-import { useState, useMemo, type CSSProperties } from 'react'
+import { useState, useMemo, useRef, type CSSProperties } from 'react'
 import './layout.css'
 import type { PlayerVersion } from './data'
 import { eligiblePlayers } from './data'
@@ -12,6 +12,7 @@ interface Props {
 
 export default function PickPanel({ state, onPick }: Props) {
   const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const { fid, fn } = state.roundFranchises[state.round]
   const { yearLo, yearHi } = state.roundRanges[state.round]
@@ -36,6 +37,7 @@ export default function PickPanel({ state, onPick }: Props) {
     const slots = openSlotsFor(lineup, p.pos)
     if (slots.length === 0) return
     setQuery('')
+    setTimeout(() => inputRef.current?.focus(), 0)
     const pick: DraftPick = {
       playerId: p.id,
       name: p.name,
@@ -53,6 +55,7 @@ export default function PickPanel({ state, onPick }: Props) {
       <div style={styles.panel}>
       <input
         type="search"
+        ref={inputRef}
         placeholder="Search players…"
         value={query}
         onChange={e => setQuery(e.target.value)}

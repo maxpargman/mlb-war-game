@@ -12,20 +12,13 @@ interface Props {
 }
 
 const MODE_LABEL: Record<DailyMode, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
-const POS_EMOJI: Record<string, string> = {
-  C: '🎯', '1B': '1️⃣', '2B': '2️⃣', '3B': '3️⃣', SS: '⚡', OF: '🌿', P: '⚾',
-}
 
-function buildShareText(date: string, mode: DailyMode, score: number, lineup: LineupSlot[]): string {
+function buildShareText(date: string, mode: DailyMode, score: number): string {
   const header = `⚾ MLB WAR Draft — Daily ${MODE_LABEL[mode]}`
   const dateStr = `📅 ${date}`
   const scoreStr = `🏆 ${score.toFixed(1)} WAR`
-  const picks = lineup
-    .filter(sl => sl.pick)
-    .map(sl => `${POS_EMOJI[sl.pos] ?? '▪️'} ${sl.pick!.name} · ${sl.pick!.war.toFixed(1)}`)
-    .join('\n')
   const link = 'https://mlb-war-draft.vercel.app/'
-  return [header, dateStr, scoreStr, '', picks, '', link].join('\n')
+  return [header, dateStr, scoreStr, '', link].join('\n')
 }
 
 export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: Props) {
@@ -66,7 +59,7 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
   }
 
   async function handleShare() {
-    const text = buildShareText(date, mode, score, lineup)
+    const text = buildShareText(date, mode, score)
     const nav = navigator as Navigator & { share?: (d: object) => Promise<void> }
     if (nav.share) {
       await nav.share({ text })
