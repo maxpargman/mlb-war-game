@@ -48,7 +48,7 @@ time-range settings stay flexible at runtime — do **not** pre-collapse to "bes
       pitchers flagged via `P`.
       *Done when:* a spot-check table shows correct primary positions for several known
       players (incl. Harper 2021 = OF, 2024 = 1B).
-- [ ] **1.3 Join WAR onto positions.** Merge batting WAR (`war_daily_bat`) and pitching
+- [x] **1.3 Join WAR onto positions.** Merge batting WAR (`war_daily_bat`) and pitching
       WAR (`war_daily_pitch`) onto the position table by player + year + team. Two-way
       players (e.g. Ohtani) yield separate hitting and pitching position-versions.
       *Done when:* each (player, team, year) row carries the correct bWAR for its
