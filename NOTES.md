@@ -61,7 +61,17 @@ Revisit whether a player should be draftable again if they appear for a differen
 Mike Trout for the Angels AND the Dodgers (if he ever played there). This is related to the
 "allowing duplicate players" open item in game-design.md §10.
 
-## Deferred: hard mode design
+## Deferred: revisit daily difficulty settings
+
+Current setup:
+- Easy: all time, all franchises
+- Medium: post-1970, random 10-year windows
+- Hard: post-1970, random 5-year windows
+
+Discuss whether these feel right in practice — year ranges, era cutoffs, window sizes.
+Could also consider making the era cutoff (1970) configurable or tied to the franchise.
+
+## Deferred: hard mode design (2-player)
 
 Hard mode should offer two settings after selecting it on the setup screen:
 1. **Total year range** — an outer window (e.g. 2000–2025) that constrains all rounds

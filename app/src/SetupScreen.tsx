@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { yearBounds } from './data'
 import type { GameSettings, TimeRangeMode } from './types'
+import type { DailyMode } from './daily'
 
-export type GameMode = '2player' | 'daily-easy' | 'daily-hard'
+export type GameMode = '2player' | 'daily-easy' | 'daily-medium' | 'daily-hard'
 
 interface Props {
   onStart: (settings: GameSettings) => void
-  onDaily: (mode: 'easy' | 'hard') => void
+  onDaily: (mode: DailyMode) => void
 }
 
 export default function SetupScreen({ onStart, onDaily }: Props) {
@@ -24,6 +25,7 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
 
   function handleStart() {
     if (gameMode === 'daily-easy') { onDaily('easy'); return }
+    if (gameMode === 'daily-medium') { onDaily('medium'); return }
     if (gameMode === 'daily-hard') { onDaily('hard'); return }
     onStart({ mode: rangeMode, yearLo, yearHi })
   }
@@ -49,9 +51,15 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
         </label>
 
         <label style={styles.radio}>
+          <input type="radio" name="gameMode" checked={gameMode === 'daily-medium'} onChange={() => setGameMode('daily-medium')} />
+          <span style={styles.radioTitle}>Daily — Medium</span>
+          <span style={styles.desc}>Post-1970, random 10-year windows</span>
+        </label>
+
+        <label style={styles.radio}>
           <input type="radio" name="gameMode" checked={gameMode === 'daily-hard'} onChange={() => setGameMode('daily-hard')} />
           <span style={styles.radioTitle}>Daily — Hard</span>
-          <span style={styles.desc}>Today's challenge, random year windows</span>
+          <span style={styles.desc}>Post-1970, random 5-year windows</span>
         </label>
       </div>
 

@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react'
 import { franchises } from './data'
 import { hasDraftablePlayer } from './engine'
 import { emptyLineup } from './types'
-import { generateDailySchedule, todayString, type DailyRound } from './daily'
+import { generateDailySchedule, todayString, type DailyRound, type DailyMode } from './daily'
 import type { GameState, DraftPick, LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
 
 interface Props {
-  mode: 'easy' | 'hard'
+  mode: DailyMode
   onDone: (score: number, lineup: LineupSlot[]) => void
 }
 
@@ -104,7 +104,7 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
           </span>
         </div>
         <span className="top-bar-right" style={styles.meta}>
-          {mode === 'hard' ? 'Hard' : 'Easy'} · {todayString()}
+          {mode.charAt(0).toUpperCase() + mode.slice(1)} · {todayString()}
         </span>
       </div>
 

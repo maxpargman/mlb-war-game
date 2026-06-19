@@ -1,5 +1,7 @@
 import { franchises, yearBounds } from './data'
 
+export type DailyMode = 'easy' | 'medium' | 'hard'
+
 // Mulberry32 — fast seedable PRNG
 function mulberry32(seed: number) {
   return function () {
@@ -11,9 +13,11 @@ function mulberry32(seed: number) {
 }
 
 function dateToSeed(date: string): number {
-  // YYYY-MM-DD → integer e.g. 20260619
   return parseInt(date.replace(/-/g, ''), 10)
 }
+
+// Each mode gets a different seed offset so schedules don't overlap
+const MODE_OFFSET: Record<DailyMode, number> = { easy: 0, medium: 1, hard: 2 }
 
 export function todayString(): string {
   return new Date().toISOString().slice(0, 10)
@@ -26,12 +30,12 @@ export interface DailyRound {
   yearHi: number
 }
 
-export function generateDailySchedule(date: string, mode: 'easy' | 'hard'): DailyRound[] {
-  const rand = mulberry32(dateToSeed(date) + (mode === 'hard' ? 1 : 0))
-  const { min, max } = yearBounds()
-  const allFranchises = franchises()
+const ERA_START = 1970  // medium and hard constrained to modern era
 
-  // Draw 11 unique franchises
+export function generateDailySchedule(date: string, mode: DailyMode): DailyRound[] {
+  const rand = mulberry32(dateToSeed(date) + MODE_OFFSET[mode])
+  const { max } = yearBounds()
+  const allFranchises = franchises()
   const pool = [...allFranchises]
   const rounds: DailyRound[] = []
 
@@ -39,13 +43,17 @@ export function generateDailySchedule(date: string, mode: 'easy' | 'hard'): Dail
     const idx = Math.floor(rand() * pool.length)
     const { fid, fn } = pool.splice(idx, 1)[0]
 
-    let yearLo = min
-    let yearHi = max
+    let yearLo: number
+    let yearHi: number
 
-    if (mode === 'hard') {
-      const windowSize = 10
-      const span = max - min - windowSize
-      yearLo = min + Math.floor(rand() * span)
+    if (mode === 'easy') {
+      const { min } = yearBounds()
+      yearLo = min
+      yearHi = max
+    } else {
+      const windowSize = mode === 'medium' ? 10 : 5
+      const span = max - ERA_START - windowSize
+      yearLo = ERA_START + Math.floor(rand() * span)
       yearHi = yearLo + windowSize
     }
 

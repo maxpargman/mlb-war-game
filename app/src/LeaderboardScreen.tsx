@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { fetchLeaderboard, submitScore, type DailyScore } from './supabase'
-import { todayString } from './daily'
+import { todayString, type DailyMode } from './daily'
 import type { LineupSlot } from './types'
 import LineupCard from './LineupCard'
 
 interface Props {
-  mode: 'easy' | 'hard'
+  mode: DailyMode
   score: number
   lineup: LineupSlot[]
   onPlayAgain: () => void
@@ -52,7 +52,7 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
       <div style={styles.header}>
         <div>
           <div style={styles.title}>Daily Challenge</div>
-          <div style={styles.sub}>{mode === 'hard' ? 'Hard' : 'Easy'} · {date}</div>
+          <div style={styles.sub}>{mode.charAt(0).toUpperCase() + mode.slice(1)} · {date}</div>
         </div>
         <div style={styles.scoreBox}>
           <div style={styles.scoreLabel}>Your score</div>

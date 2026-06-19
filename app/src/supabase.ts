@@ -9,7 +9,7 @@ export interface DailyScore {
   id?: string
   date: string        // YYYY-MM-DD
   username: string
-  mode: 'easy' | 'hard'
+  mode: 'easy' | 'medium' | 'hard'
   score: number
   lineup: object
   created_at?: string
@@ -20,7 +20,7 @@ export async function submitScore(entry: Omit<DailyScore, 'id' | 'created_at'>):
   if (error) throw new Error(error.message)
 }
 
-export async function fetchLeaderboard(date: string, mode: 'easy' | 'hard'): Promise<DailyScore[]> {
+export async function fetchLeaderboard(date: string, mode: 'easy' | 'medium' | 'hard'): Promise<DailyScore[]> {
   const { data, error } = await supabase
     .from('daily_scores')
     .select('username, score, created_at')

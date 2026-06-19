@@ -14,7 +14,7 @@ export default function App() {
   const [phase, setPhase] = useState<AppPhase>('loading')
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettings] = useState<GameSettings | null>(null)
-  const [dailyMode, setDailyMode] = useState<'easy' | 'hard'>('easy')
+  const [dailyMode, setDailyMode] = useState<'easy' | 'medium' | 'hard'>('easy')
   const [finalState, setFinalState] = useState<GameState | null>(null)
   const [dailyResult, setDailyResult] = useState<{ score: number; lineup: LineupSlot[] } | null>(null)
 
