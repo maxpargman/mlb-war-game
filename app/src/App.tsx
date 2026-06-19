@@ -27,6 +27,17 @@ export default function App() {
   if (error) return <p style={{ color: 'red', padding: '1rem' }}>Error: {error}</p>
   if (phase === 'loading') return <p style={{ padding: '1rem', color: '#f1f5f9' }}>Loading data…</p>
 
+  function goHome() {
+    setPhase('setup')
+    setSettings(null)
+    setFinalState(null)
+    setDailyResult(null)
+  }
+
+  const homeBtn = phase !== 'setup' && (
+    <button onClick={goHome} style={homeStyle} title="Home">⌂</button>
+  )
+
   if (phase === 'setup') {
     return (
       <SetupScreen
@@ -38,42 +49,54 @@ export default function App() {
 
   if (phase === 'daily') {
     return (
-      <DailyDraftScreen
-        mode={dailyMode}
-        onDone={(score, lineup) => {
-          setDailyResult({ score, lineup })
-          setPhase('leaderboard')
-        }}
-      />
+      <>
+        {homeBtn}
+        <DailyDraftScreen
+          mode={dailyMode}
+          onDone={(score, lineup) => {
+            setDailyResult({ score, lineup })
+            setPhase('leaderboard')
+          }}
+        />
+      </>
     )
   }
 
   if (phase === 'leaderboard' && dailyResult) {
     return (
-      <LeaderboardScreen
-        mode={dailyMode}
-        score={dailyResult.score}
-        lineup={dailyResult.lineup}
-        onPlayAgain={() => setPhase('setup')}
-      />
+      <>
+        {homeBtn}
+        <LeaderboardScreen
+          mode={dailyMode}
+          score={dailyResult.score}
+          lineup={dailyResult.lineup}
+          onPlayAgain={() => setPhase('setup')}
+        />
+      </>
     )
   }
 
   if (phase === 'draft' && settings) {
     return (
-      <DraftScreen
-        settings={settings}
-        onEnd={gs => { setFinalState(gs); setPhase('done') }}
-      />
+      <>
+        {homeBtn}
+        <DraftScreen
+          settings={settings}
+          onEnd={gs => { setFinalState(gs); setPhase('done') }}
+        />
+      </>
     )
   }
 
   // 2-player done screen
   const lineups = finalState!.lineups
+
   const totals = lineups.map(l => l.reduce((s, sl) => s + (sl.pick?.war ?? 0), 0))
   const winner = totals[0] > totals[1] ? 'Player 1' : totals[1] > totals[0] ? 'Player 2' : 'Tie!'
 
   return (
+    <>
+    {homeBtn}
     <div style={{
       minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
       fontFamily: 'system-ui, sans-serif', padding: '1.25rem 1.5rem',
@@ -99,5 +122,21 @@ export default function App() {
         ))}
       </div>
     </div>
+    </>
   )
+}
+
+const homeStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: '0.75rem',
+  left: '0.75rem',
+  zIndex: 100,
+  background: '#1e293b',
+  border: '1px solid #334155',
+  color: '#94a3b8',
+  borderRadius: '8px',
+  padding: '0.35rem 0.65rem',
+  fontSize: '1.1rem',
+  cursor: 'pointer',
+  lineHeight: 1,
 }
