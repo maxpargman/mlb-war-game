@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { fetchLeaderboard, submitScore, type DailyScore } from './supabase'
 import { todayString } from './daily'
 import type { LineupSlot } from './types'
+import LineupCard from './LineupCard'
 
 interface Props {
   mode: 'easy' | 'hard'
@@ -40,7 +41,7 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
       })
       setSubmitted(true)
     } catch (e) {
-      setError('Failed to submit — try again.')
+      setError(String(e))
     } finally {
       setSubmitting(false)
     }
@@ -114,6 +115,14 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
             </tbody>
           </table>
         )}
+      </div>
+
+      <div style={{ width: '100%', maxWidth: '500px' }}>
+        <LineupCard
+          playerName="Your Lineup"
+          lineup={lineup}
+          totalWar={score}
+        />
       </div>
 
       <button onClick={onPlayAgain} style={styles.againBtn}>

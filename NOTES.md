@@ -43,6 +43,17 @@ Raw files live in `data/raw/` (git-ignored, not redistributable).
   lists eligible players with their best WAR. Saved from slice 2.1.
   To view: `cd app && npm run preview` → http://localhost:4173
 
+## Deferred: share score (Wordle-style)
+
+After completing the daily challenge, let users share their score via text/social.
+Format similar to Wordle — emoji grid or lineup summary + score + link to play.
+Example:
+  ⚾ MLB WAR Draft — Daily Easy (2026-06-19)
+  🏆 47.3 WAR
+  https://mlb-war-draft.vercel.app/
+Use the Web Share API (`navigator.share`) where available (mobile), fall back to
+clipboard copy on desktop.
+
 ## Deferred: same player on different teams
 
 Currently a player can only be drafted once per game regardless of which franchise they played for.
