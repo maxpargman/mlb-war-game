@@ -81,16 +81,16 @@ Single-device, two-player hot-seat. All game state lives in the browser for now.
 - [x] **2.3 Draft loop skeleton.** 11 rounds, snake order, a random team shown each round,
       no team repeats, dead-end reroll when a team can't fill any open slot.
       *Done when:* a full 11-round turn sequence runs end to end with placeholder picks.
-- [ ] **2.4 Pick flow.** Within the shown team, search a player, choose a position-version,
+- [x] **2.4 Pick flow.** Within the shown team, search a player, choose a position-version,
       assign it to an open matching slot; award best qualifying WAR for the active range.
       *Done when:* a pick fills the right slot and adds the correct WAR.
-- [ ] **2.5 Draft rules.** Shared board across both players; no duplicate person; one
+- [x] **2.5 Draft rules.** Shared board across both players; no duplicate person; one
       position-version per person; rules enforced.
       *Done when:* once a player (any version) is taken, he's gone for both players.
-- [ ] **2.6 Lineup cards UI.** Two lineup cards (11 slots each), running WAR totals,
+- [x] **2.6 Lineup cards UI.** Two lineup cards (11 slots each), running WAR totals,
       whose-turn indicator.
       *Done when:* both cards update live as picks happen.
-- [ ] **2.7 End + scoring.** Game ends when both lineups are full; show totals and winner.
+- [x] **2.7 End + scoring.** Game ends when both lineups are full; show totals and winner.
       *Done when:* the higher total is declared correctly.
 - [ ] **2.8 Responsive polish.** Clean layout on desktop and phone.
       *Done when:* playable and readable on both without horizontal scrolling.

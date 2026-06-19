@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './layout.css'
 import { loadData } from './data'
 import SetupScreen from './SetupScreen'
 import DraftScreen from './DraftScreen'
@@ -53,10 +54,7 @@ export default function App() {
       gap: '1rem',
     }}>
       {/* Result banner */}
-      <div style={{
-        width: '100%', maxWidth: '900px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem',
-      }}>
+      <div className="top-bar">
         <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Draft complete</span>
         <span style={{ fontWeight: 800, fontSize: '1.5rem', color: '#facc15' }}>{winner} wins!</span>
         <button
@@ -72,7 +70,7 @@ export default function App() {
       </div>
 
       {/* Side-by-side lineup cards — same component as draft screen */}
-      <div style={{ width: '100%', maxWidth: '900px', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+      <div className="lineup-row">
         {lineups.map((lineup, pi) => (
           <LineupCard
             key={pi}

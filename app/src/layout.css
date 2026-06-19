@@ -1,0 +1,58 @@
+/* Lineup cards: side-by-side on wide screens, stacked on mobile */
+.lineup-row {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+@media (max-width: 600px) {
+  .lineup-row {
+    flex-direction: column;
+  }
+}
+
+/* Pick panel list: constrained height with scroll */
+.pick-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 600px) {
+  .pick-list {
+    max-height: 32vh;
+  }
+}
+
+/* Top bar: fixed three-column grid so center never shifts with team name length */
+.top-bar {
+  width: 100%;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.top-bar-left  { justify-self: start; }
+.top-bar-center { justify-self: center; text-align: center; }
+.top-bar-right { justify-self: end; }
+
+@media (max-width: 600px) {
+  .top-bar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.25rem;
+  }
+  .top-bar-left, .top-bar-right { justify-self: center; }
+}
+
+/* Player row hover */
+.player-row:hover {
+  background: #263347;
+}

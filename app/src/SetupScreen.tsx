@@ -31,27 +31,15 @@ export default function SetupScreen({ onStart }: Props) {
         <h2 style={styles.cardTitle}>Time Range</h2>
 
         <label style={styles.radio}>
-          <input
-            type="radio" name="mode" value="all"
-            checked={mode === 'all'}
-            onChange={() => setMode('all')}
-          />
-          <span>
-            <strong>All years</strong>
-            <span style={styles.desc}> — any season in franchise history</span>
-          </span>
+          <input type="radio" name="mode" value="all" checked={mode === 'all'} onChange={() => setMode('all')} />
+          <span style={styles.radioTitle}>All Time</span>
+          <span style={styles.desc}>Any season in franchise history</span>
         </label>
 
         <label style={styles.radio}>
-          <input
-            type="radio" name="mode" value="custom"
-            checked={mode === 'custom'}
-            onChange={() => setMode('custom')}
-          />
-          <span>
-            <strong>Custom range</strong>
-            <span style={styles.desc}> — only seasons within a chosen window</span>
-          </span>
+          <input type="radio" name="mode" value="custom" checked={mode === 'custom'} onChange={() => setMode('custom')} />
+          <span style={styles.radioTitle}>Custom Range</span>
+          <span style={styles.desc}>Only seasons within a chosen window</span>
         </label>
 
         {mode === 'custom' && (
@@ -78,15 +66,9 @@ export default function SetupScreen({ onStart }: Props) {
         )}
 
         <label style={styles.radio}>
-          <input
-            type="radio" name="mode" value="hard"
-            checked={mode === 'hard'}
-            onChange={() => setMode('hard')}
-          />
-          <span>
-            <strong>Hard mode</strong>
-            <span style={styles.desc}> — year range randomized each round</span>
-          </span>
+          <input type="radio" name="mode" value="hard" checked={mode === 'hard'} onChange={() => setMode('hard')} />
+          <span style={styles.radioTitle}>Hard Mode</span>
+          <span style={styles.desc}>Year range randomized each round</span>
         </label>
       </div>
 
@@ -135,16 +117,21 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '0.25rem',
   },
   radio: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '0.6rem',
+    display: 'grid',
+    gridTemplateColumns: 'auto 7rem 1fr',
+    alignItems: 'baseline',
+    gap: '0 0.6rem',
     cursor: 'pointer',
     fontSize: '0.95rem',
-    lineHeight: 1.4,
+    lineHeight: 1.6,
+  },
+  radioTitle: {
+    fontWeight: 700,
   },
   desc: {
     color: '#94a3b8',
     fontWeight: 400,
+    fontSize: '0.85rem',
   },
   rangeRow: {
     display: 'flex',

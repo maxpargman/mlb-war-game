@@ -1,4 +1,5 @@
 import { useState, useMemo, type CSSProperties } from 'react'
+import './layout.css'
 import type { PlayerVersion } from './data'
 import { eligiblePlayers } from './data'
 import { openSlotsFor } from './engine'
@@ -63,7 +64,7 @@ export default function PickPanel({ state, onPick }: Props) {
       ) : filtered.length === 0 ? (
         <p style={styles.empty}>No players match "{query}"</p>
       ) : (
-        <ul style={styles.list}>
+        <ul className="pick-list" style={styles.list}>
           {filtered.map(p => (
             <PlayerRow key={`${p.id}|${p.pos}`} player={p} onPick={handlePick} />
           ))}
@@ -74,14 +75,12 @@ export default function PickPanel({ state, onPick }: Props) {
 }
 
 function PlayerRow({ player: p, onPick }: { player: PlayerVersion; onPick: (p: PlayerVersion) => void }) {
-  const [hovered, setHovered] = useState(false)
-  const rowStyle: CSSProperties = { ...styles.row, background: hovered ? '#263347' : 'transparent' }
+  const rowStyle: CSSProperties = styles.row
   return (
     <li
+      className="player-row"
       style={rowStyle}
       onClick={() => onPick(p)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <span style={styles.pos}>{p.pos}</span>
       <span style={styles.name}>{p.name}</span>

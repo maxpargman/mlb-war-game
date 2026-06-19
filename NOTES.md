@@ -51,6 +51,11 @@ outdated — e.g. "Bobby Witt" instead of "Bobby Witt Jr.", missing suffixes (Jr
 To fix: audit `People.csv` for known suffixes and patch the relevant rows, or override a small
 lookup table in `build_game_data.py`. Verify against Baseball-Reference player pages.
 
+## Deferred UI tweaks
+
+- **Pick panel height** — the scrollable player list (`pick-list`) is currently `max-height: 40vh`.
+  User wants it shorter. Tune `max-height` in `layout.css` once overall layout is finalized.
+
 ## Deferred UI ideas
 
 - **Team logo** next to franchise name on draft screen. MLB logo assets aren't freely redistributable;

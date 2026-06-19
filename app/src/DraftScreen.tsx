@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
+import './layout.css'
 import { franchises } from './data'
 import { initGame, autoPickBest, applyPick, hasDraftablePlayer } from './engine'
-import { snakeOrder } from './types'
 import type { GameSettings, GameState, DraftPick } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
@@ -46,9 +46,6 @@ export default function DraftScreen({ settings, onEnd }: Props) {
   if (state.phase === 'done') return null
   const franchise = state.roundFranchises[round]
   const { yearLo, yearHi } = state.roundRanges[round]
-  const order = snakeOrder(round)
-  const isFirstPick = order.indexOf(turn as 0 | 1) === 0
-
   function handlePick(pick: DraftPick, slotIndex: number) {
     setState(s => resolveState(applyPick(s, pick, slotIndex)))
   }
@@ -64,13 +61,13 @@ export default function DraftScreen({ settings, onEnd }: Props) {
   return (
     <div style={styles.page}>
       {/* Top bar */}
-      <div style={styles.topBar}>
-        <span style={styles.roundLabel}>Round {round + 1} / 11</span>
-        <div style={styles.franchiseChip}>
+      <div className="top-bar">
+        <span className="top-bar-left" style={styles.roundLabel}>Round {round + 1} / 11</span>
+        <div className="top-bar-center" style={styles.franchiseChip}>
           <span style={styles.franchiseName}>{franchise.fn}</span>
           <span style={styles.yearRange}>{yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}</span>
         </div>
-        <span style={styles.turnLabel}>{PLAYER_NAMES[turn]}'s pick{!isFirstPick ? ' (2nd)' : ''}</span>
+        <span className="top-bar-right" style={styles.turnLabel}>{PLAYER_NAMES[turn]}'s pick</span>
       </div>
 
       {/* Pick panel */}
@@ -82,7 +79,7 @@ export default function DraftScreen({ settings, onEnd }: Props) {
       </button>
 
       {/* Side-by-side lineup cards */}
-      <div style={styles.lineupRow}>
+      <div className="lineup-row">
         {state.lineups.map((lineup, pi) => (
           <LineupCard
             key={pi}
@@ -109,15 +106,6 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '1rem',
   },
-  topBar: {
-    width: '100%',
-    maxWidth: '900px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '0.5rem',
-  },
   roundLabel: { color: '#64748b', fontSize: '0.85rem' },
   franchiseChip: {
     display: 'flex',
@@ -138,12 +126,5 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     color: '#64748b',
     cursor: 'pointer',
-  },
-  lineupRow: {
-    width: '100%',
-    maxWidth: '900px',
-    display: 'flex',
-    gap: '1rem',
-    alignItems: 'flex-start',
   },
 }
