@@ -3,16 +3,20 @@ import './layout.css'
 import { loadData } from './data'
 import SetupScreen from './SetupScreen'
 import DraftScreen from './DraftScreen'
+import DailyDraftScreen from './DailyDraftScreen'
+import LeaderboardScreen from './LeaderboardScreen'
 import LineupCard from './LineupCard'
-import type { GameSettings, GameState } from './types'
+import type { GameSettings, GameState, LineupSlot } from './types'
 
-type AppPhase = 'loading' | 'setup' | 'draft' | 'done'
+type AppPhase = 'loading' | 'setup' | 'draft' | 'done' | 'daily' | 'leaderboard'
 
 export default function App() {
   const [phase, setPhase] = useState<AppPhase>('loading')
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettings] = useState<GameSettings | null>(null)
+  const [dailyMode, setDailyMode] = useState<'easy' | 'hard'>('easy')
   const [finalState, setFinalState] = useState<GameState | null>(null)
+  const [dailyResult, setDailyResult] = useState<{ score: number; lineup: LineupSlot[] } | null>(null)
 
   useEffect(() => {
     loadData()
@@ -23,11 +27,39 @@ export default function App() {
   if (error) return <p style={{ color: 'red', padding: '1rem' }}>Error: {error}</p>
   if (phase === 'loading') return <p style={{ padding: '1rem', color: '#f1f5f9' }}>Loading data…</p>
 
-  if (phase === 'setup' || !settings) {
-    return <SetupScreen onStart={s => { setSettings(s); setPhase('draft') }} />
+  if (phase === 'setup') {
+    return (
+      <SetupScreen
+        onStart={s => { setSettings(s); setPhase('draft') }}
+        onDaily={m => { setDailyMode(m); setPhase('daily') }}
+      />
+    )
   }
 
-  if (phase === 'draft') {
+  if (phase === 'daily') {
+    return (
+      <DailyDraftScreen
+        mode={dailyMode}
+        onDone={(score, lineup) => {
+          setDailyResult({ score, lineup })
+          setPhase('leaderboard')
+        }}
+      />
+    )
+  }
+
+  if (phase === 'leaderboard' && dailyResult) {
+    return (
+      <LeaderboardScreen
+        mode={dailyMode}
+        score={dailyResult.score}
+        lineup={dailyResult.lineup}
+        onPlayAgain={() => setPhase('setup')}
+      />
+    )
+  }
+
+  if (phase === 'draft' && settings) {
     return (
       <DraftScreen
         settings={settings}
@@ -36,24 +68,17 @@ export default function App() {
     )
   }
 
-  // Done screen
+  // 2-player done screen
   const lineups = finalState!.lineups
   const totals = lineups.map(l => l.reduce((s, sl) => s + (sl.pick?.war ?? 0), 0))
   const winner = totals[0] > totals[1] ? 'Player 1' : totals[1] > totals[0] ? 'Player 2' : 'Tie!'
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: '#0f172a',
-      color: '#f1f5f9',
-      fontFamily: 'system-ui, sans-serif',
-      padding: '1.25rem 1.5rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '1rem',
+      minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
+      fontFamily: 'system-ui, sans-serif', padding: '1.25rem 1.5rem',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
     }}>
-      {/* Result banner */}
       <div className="top-bar">
         <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Draft complete</span>
         <span style={{ fontWeight: 800, fontSize: '1.5rem', color: '#facc15' }}>{winner} wins!</span>
@@ -68,16 +93,9 @@ export default function App() {
           Play again
         </button>
       </div>
-
-      {/* Side-by-side lineup cards — same component as draft screen */}
       <div className="lineup-row">
         {lineups.map((lineup, pi) => (
-          <LineupCard
-            key={pi}
-            playerName={`Player ${pi + 1}`}
-            lineup={lineup}
-            totalWar={totals[pi]}
-          />
+          <LineupCard key={pi} playerName={`Player ${pi + 1}`} lineup={lineup} totalWar={totals[pi]} />
         ))}
       </div>
     </div>

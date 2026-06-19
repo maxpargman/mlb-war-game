@@ -43,6 +43,13 @@ Raw files live in `data/raw/` (git-ignored, not redistributable).
   lists eligible players with their best WAR. Saved from slice 2.1.
   To view: `cd app && npm run preview` → http://localhost:4173
 
+## Deferred: same player on different teams
+
+Currently a player can only be drafted once per game regardless of which franchise they played for.
+Revisit whether a player should be draftable again if they appear for a different franchise — e.g.
+Mike Trout for the Angels AND the Dodgers (if he ever played there). This is related to the
+"allowing duplicate players" open item in game-design.md §10.
+
 ## Deferred: hard mode design
 
 Hard mode should offer two settings after selecting it on the setup screen:

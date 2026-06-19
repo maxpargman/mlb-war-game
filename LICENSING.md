@@ -1,4 +1,3 @@
-# WAR Data Licensing — Options and Decision
 
 *Status: OPEN. This must be resolved before any commercial launch. It does not block development.*
 *Note: this is a planning summary, not legal advice. Confirm terms with each provider and a lawyer before launch.*
