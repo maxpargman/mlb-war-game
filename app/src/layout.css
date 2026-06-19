@@ -14,10 +14,17 @@
   }
 }
 
-/* Pick panel: fixed-height results area so lineup cards don't move */
+/* Pick panel: fixed-height container reserves space for dropdown */
+.pick-panel-wrap {
+  width: 100%;
+  max-width: 900px;
+  height: 230px; /* search bar ~52px + gap + dropdown ~175px */
+}
+
 .pick-results {
-  height: 175px;
+  max-height: 175px;
   overflow-y: auto;
+  margin-top: 0.25rem;
 }
 
 /* Pick panel list */

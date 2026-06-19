@@ -49,7 +49,8 @@ export default function PickPanel({ state, onPick }: Props) {
   }
 
   return (
-    <div style={styles.panel}>
+    <div className="pick-panel-wrap">
+      <div style={styles.panel}>
       <input
         type="search"
         placeholder="Search players…"
@@ -59,21 +60,16 @@ export default function PickPanel({ state, onPick }: Props) {
         autoFocus
       />
 
-      <div className="pick-results">
-        {available.length === 0 ? (
-          <p style={styles.empty}>No eligible players — will reroll team.</p>
-        ) : !query.trim() ? (
-          <p style={styles.empty}>Start typing a name to search…</p>
-        ) : filtered.length === 0 ? (
-          <p style={styles.empty}>No players match "{query}"</p>
-        ) : (
+      </div>
+      {query.trim() && filtered.length > 0 && (
+        <div className="pick-results" style={styles.results}>
           <ul className="pick-list" style={styles.list}>
             {filtered.map(p => (
               <PlayerRow key={`${p.id}|${p.pos}`} player={p} onPick={handlePick} />
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -96,27 +92,28 @@ const styles: Record<string, React.CSSProperties> = {
   panel: {
     width: '100%',
     maxWidth: '900px',
-    background: '#1e293b',
-    borderRadius: '12px',
-    overflow: 'hidden',
   },
   search: {
     width: '100%',
     boxSizing: 'border-box',
     padding: '0.65rem 1rem',
     fontSize: '0.95rem',
-    background: '#0f172a',
-    border: 'none',
-    borderBottom: '1px solid #334155',
+    background: '#1e293b',
+    border: '1px solid #334155',
+    borderRadius: '8px',
     color: '#f1f5f9',
     outline: 'none',
+  },
+  results: {
+    background: '#1e293b',
+    borderRadius: '8px',
+    border: '1px solid #334155',
+    overflow: 'hidden',
   },
   list: {
     margin: 0,
     padding: 0,
     listStyle: 'none',
-    maxHeight: '280px',
-    overflowY: 'auto',
   },
   row: {
     display: 'flex',
