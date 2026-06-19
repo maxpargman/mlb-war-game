@@ -1,0 +1,50 @@
+# Dev Notes
+
+Running scratchpad for useful commands, decisions, and things to remember.
+Add to this as the project grows.
+
+---
+
+## Running the app
+
+```bash
+cd app
+npm run dev        # dev server at http://localhost:5173 (hot reload)
+npm run preview    # serve the last production build at http://localhost:4173
+npm run build      # production build → app/dist/
+```
+
+## Data pipeline (Python, mlbwar conda env)
+
+Run these in order to regenerate all intermediate files and game-data.json:
+
+```bash
+conda activate mlbwar
+python data/build_positions.py       # positions.csv from Appearances.csv
+python data/build_war_table.py       # war_positions.csv (WAR joined onto positions)
+python data/build_franchise_map.py   # adds franchID + franchise_name, filters to 30 active franchises
+python data/build_game_data.py       # emits data/game-data.json (also copies to app/public/)
+python data/validate_game_data.py    # acceptance tests — all 11 must pass
+```
+
+Raw files live in `data/raw/` (git-ignored, not redistributable).
+
+## Saved screens
+
+- **DataProbe** (`app/src/DataProbe.tsx`) — franchise + year-range picker that
+  lists eligible players with their best WAR. Saved from slice 2.1.
+  To view: `cd app && npm run preview` → http://localhost:4173
+
+## game-data.json field names
+
+The JSON uses compact keys to keep the file small (~6 MB uncompressed, ~1.6 MB gzipped):
+
+| Key  | Meaning          |
+|------|------------------|
+| `id` | playerID         |
+| `n`  | full name        |
+| `fid`| franchID         |
+| `fn` | franchise name   |
+| `y`  | season year      |
+| `pos`| position version |
+| `war`| bWAR             |
