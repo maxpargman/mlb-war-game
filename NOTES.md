@@ -5,6 +5,14 @@ Add to this as the project grows.
 
 ---
 
+## Deployment
+
+- **Live URL:** https://mlb-war-draft.vercel.app/
+- **Vercel dashboard:** https://vercel.com/mlb-games/mlb-war-draft
+- **GitHub repo:** https://github.com/maxpargman/mlb-war-game
+- Pushes to `master` auto-deploy to production
+- Vercel root directory is set to `app/`
+
 ## Running the app
 
 ```bash
