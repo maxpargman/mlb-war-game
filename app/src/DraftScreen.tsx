@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import './layout.css'
 import { franchises } from './data'
-import { initGame, autoPickBest, applyPick, hasDraftablePlayer } from './engine'
+import { initGame, applyPick, hasDraftablePlayer } from './engine'
 import type { GameSettings, GameState, DraftPick } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
@@ -50,12 +50,6 @@ export default function DraftScreen({ settings, onEnd }: Props) {
     setState(s => resolveState(applyPick(s, pick, slotIndex)))
   }
 
-  function handleAutoPick() {
-    const result = autoPickBest(state)
-    if (!result) return
-    handlePick(result.pick, result.slotIndex)
-  }
-
   const totals = state.lineups.map(l => l.reduce((sum, sl) => sum + (sl.pick?.war ?? 0), 0))
 
   return (
@@ -72,11 +66,6 @@ export default function DraftScreen({ settings, onEnd }: Props) {
 
       {/* Pick panel */}
       <PickPanel state={state} onPick={handlePick} />
-
-      {/* Auto-pick fallback */}
-      <button onClick={handleAutoPick} style={styles.autoBtn}>
-        Auto-pick
-      </button>
 
       {/* Side-by-side lineup cards */}
       <div className="lineup-row">
