@@ -1,24 +1,12 @@
-// Temporary probe screen for slice 2.1.
-// Lets you pick a franchise + year range and lists eligible players.
-// Will be replaced by real game UI in later slices.
-
 import { useEffect, useState } from 'react'
-import {
-  loadData,
-  franchises,
-  eligiblePlayers,
-  yearBounds,
-  type PlayerVersion,
-} from './data'
+import { loadData, yearBounds } from './data'
+import SetupScreen from './SetupScreen'
+import type { GameSettings } from './types'
 
 export default function App() {
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const [fid, setFid] = useState('PHI')
-  const [yearLo, setYearLo] = useState(2000)
-  const [yearHi, setYearHi] = useState(2025)
-  const [players, setPlayers] = useState<PlayerVersion[]>([])
+  const [settings, setSettings] = useState<GameSettings | null>(null)
 
   useEffect(() => {
     loadData()
@@ -26,71 +14,46 @@ export default function App() {
       .catch((e: unknown) => setError(String(e)))
   }, [])
 
-  useEffect(() => {
-    if (!ready) return
-    setPlayers(eligiblePlayers(fid, yearLo, yearHi))
-  }, [ready, fid, yearLo, yearHi])
+  if (error) return <p style={{ color: 'red', padding: '1rem' }}>Error: {error}</p>
+  if (!ready) return <p style={{ padding: '1rem' }}>Loading data…</p>
 
-  if (error) return <p style={{ color: 'red' }}>Error: {error}</p>
-  if (!ready) return <p>Loading data…</p>
+  if (!settings) {
+    return <SetupScreen onStart={setSettings} />
+  }
 
+  return <GamePlaceholder settings={settings} onBack={() => setSettings(null)} />
+}
+
+function GamePlaceholder({ settings, onBack }: { settings: GameSettings; onBack: () => void }) {
   const { min, max } = yearBounds()
-  const franch = franchises()
+  const rangeLabel =
+    settings.mode === 'all'
+      ? `All years (${min}–${max})`
+      : settings.mode === 'custom'
+      ? `${settings.yearLo}–${settings.yearHi}`
+      : `Hard mode (randomized per round)`
 
   return (
-    <div style={{ padding: '1rem', fontFamily: 'monospace' }}>
-      <h1>MLB WAR Draft — data probe</h1>
-
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <label>
-          Franchise{' '}
-          <select value={fid} onChange={e => setFid(e.target.value)}>
-            {franch.map(f => (
-              <option key={f.fid} value={f.fid}>{f.fn}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Year from{' '}
-          <input
-            type="number" min={min} max={max} value={yearLo}
-            onChange={e => setYearLo(Number(e.target.value))}
-            style={{ width: '5rem' }}
-          />
-        </label>
-
-        <label>
-          to{' '}
-          <input
-            type="number" min={min} max={max} value={yearHi}
-            onChange={e => setYearHi(Number(e.target.value))}
-            style={{ width: '5rem' }}
-          />
-        </label>
-      </div>
-
-      <p>{players.length} eligible player-versions</p>
-
-      <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-        <thead>
-          <tr>
-            {['Name', 'Pos', 'Best WAR', 'Year'].map(h => (
-              <th key={h} style={{ textAlign: 'left', padding: '2px 12px', borderBottom: '1px solid #666' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {players.map(p => (
-            <tr key={`${p.id}|${p.pos}`}>
-              <td style={{ padding: '2px 12px' }}>{p.name}</td>
-              <td style={{ padding: '2px 12px' }}>{p.pos}</td>
-              <td style={{ padding: '2px 12px' }}>{p.bestWar.toFixed(2)}</td>
-              <td style={{ padding: '2px 12px' }}>{p.bestYear}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: '#0f172a', color: '#f1f5f9',
+      fontFamily: 'system-ui, sans-serif', padding: '1.5rem',
+    }}>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Draft starting…</h1>
+      <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>Time range: <strong style={{ color: '#f1f5f9' }}>{rangeLabel}</strong></p>
+      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '2rem' }}>
+        (Game UI comes in slice 2.3)
+      </p>
+      <button
+        onClick={onBack}
+        style={{
+          padding: '0.5rem 1.5rem', borderRadius: '6px', border: '1px solid #334155',
+          background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem',
+        }}
+      >
+        ← Back to setup
+      </button>
     </div>
   )
 }
