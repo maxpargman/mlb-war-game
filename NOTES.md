@@ -35,6 +35,22 @@ Raw files live in `data/raw/` (git-ignored, not redistributable).
   lists eligible players with their best WAR. Saved from slice 2.1.
   To view: `cd app && npm run preview` → http://localhost:4173
 
+## Deferred: hard mode design
+
+Hard mode should offer two settings after selecting it on the setup screen:
+1. **Total year range** — an outer window (e.g. 2000–2025) that constrains all rounds
+2. **Round window size** — a fixed interval in years (e.g. 3), must be < total range span
+
+Each round, a random start year is drawn within the outer window such that
+[start, start + window] stays inside it. Both team and year range are randomized per round.
+
+## Deferred: player name accuracy
+
+Player names come from Lahman's `People.csv` (nameFirst + nameLast). Some names are wrong or
+outdated — e.g. "Bobby Witt" instead of "Bobby Witt Jr.", missing suffixes (Jr., Sr., III).
+To fix: audit `People.csv` for known suffixes and patch the relevant rows, or override a small
+lookup table in `build_game_data.py`. Verify against Baseball-Reference player pages.
+
 ## Deferred UI ideas
 
 - **Team logo** next to franchise name on draft screen. MLB logo assets aren't freely redistributable;

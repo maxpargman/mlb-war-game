@@ -26,13 +26,15 @@ export default function PickPanel({ state, onPick }: Props) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return available
-    return available.filter(p => p.name.toLowerCase().includes(q))
+    const result = q ? available.filter(p => p.name.toLowerCase().includes(q)) : available
+    const lastName = (name: string) => name.slice(name.lastIndexOf(' ') + 1)
+    return [...result].sort((a, b) => lastName(a.name).localeCompare(lastName(b.name)))
   }, [available, query])
 
   function handlePick(p: typeof available[0]) {
     const slots = openSlotsFor(lineup, p.pos)
     if (slots.length === 0) return
+    setQuery('')
     const pick: DraftPick = {
       playerId: p.id,
       name: p.name,
@@ -83,8 +85,6 @@ function PlayerRow({ player: p, onPick }: { player: PlayerVersion; onPick: (p: P
     >
       <span style={styles.pos}>{p.pos}</span>
       <span style={styles.name}>{p.name}</span>
-      <span style={styles.war}>{p.bestWar.toFixed(1)}</span>
-      <span style={styles.year}>{p.bestYear}</span>
     </li>
   )
 }

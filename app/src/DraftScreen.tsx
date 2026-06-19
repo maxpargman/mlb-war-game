@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { franchises } from './data'
 import { initGame, autoPickBest, applyPick, hasDraftablePlayer } from './engine'
 import { snakeOrder } from './types'
@@ -25,6 +25,7 @@ function rerollFranchise(state: GameState): GameState {
 
 // Advance through rerolls until there's at least one draftable player, or we run out of franchises.
 function resolveState(state: GameState): GameState {
+  if (state.phase === 'done') return state
   let s = state
   let attempts = 0
   while (!hasDraftablePlayer(s, s.roundFranchises[s.round].fid) && attempts < 30) {
@@ -37,12 +38,12 @@ function resolveState(state: GameState): GameState {
 export default function DraftScreen({ settings, onEnd }: Props) {
   const [state, setState] = useState<GameState>(() => resolveState(initGame(settings)))
 
-  if (state.phase === 'done') {
-    onEnd(state)
-    return null
-  }
+  useEffect(() => {
+    if (state.phase === 'done') onEnd(state)
+  }, [state.phase])
 
   const { round, turn } = state
+  if (state.phase === 'done') return null
   const franchise = state.roundFranchises[round]
   const { yearLo, yearHi } = state.roundRanges[round]
   const order = snakeOrder(round)
