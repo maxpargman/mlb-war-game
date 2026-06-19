@@ -43,7 +43,8 @@ BR_TO_LAHMAN = {
     "TBR": "TBA",  # Tampa Bay Rays
     "TBD": "TBA",  # Tampa Bay Devil Rays (early)
     "CHC": "CHN",  # Chicago Cubs
-    "CWS": "CHA",  # Chicago White Sox
+    "CHW": "CHA",  # Chicago White Sox (BR uses CHW, Lahman uses CHA)
+    "STL": "SLN",  # St. Louis Cardinals (BR uses STL, Lahman uses SLN)
     "FLA": "FLO",  # Florida Marlins (pre-2012)
     "WSN": "WAS",  # Washington Nationals
 }

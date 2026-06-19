@@ -53,7 +53,7 @@ time-range settings stay flexible at runtime — do **not** pre-collapse to "bes
       players (e.g. Ohtani) yield separate hitting and pitching position-versions.
       *Done when:* each (player, team, year) row carries the correct bWAR for its
       position-version; Ohtani shows both a hitting and a pitching entry.
-- [ ] **1.4 Map team → current franchise.** Use `Teams.csv` + `TeamsFranchises.csv` so a
+- [x] **1.4 Map team → current franchise.** Use `Teams.csv` + `TeamsFranchises.csv` so a
       franchise's full history maps to its current identity (e.g. Expos → Nationals).
       *Done when:* drafting the Nationals surfaces Expos-era players; only currently
       existing franchises appear.
