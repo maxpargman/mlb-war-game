@@ -43,7 +43,7 @@ time-range settings stay flexible at runtime — do **not** pre-collapse to "bes
       runs and prints file summaries + the Bryce Harper sanity check.
       *Done when:* WAR-by-season-and-team is visible, and Harper's OF years vs 1B years
       are distinguishable in the position data.
-- [ ] **1.2 Primary position per season.** From `Appearances.csv`, compute each player's
+- [x] **1.2 Primary position per season.** From `Appearances.csv`, compute each player's
       primary position per season (most games), collapsing LF/CF/RF into a single `OF`;
       pitchers flagged via `P`.
       *Done when:* a spot-check table shows correct primary positions for several known
