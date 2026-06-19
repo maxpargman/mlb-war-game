@@ -57,7 +57,7 @@ time-range settings stay flexible at runtime — do **not** pre-collapse to "bes
       franchise's full history maps to its current identity (e.g. Expos → Nationals).
       *Done when:* drafting the Nationals surfaces Expos-era players; only currently
       existing franchises appear.
-- [ ] **1.5 Output schema + size budget + emit JSON.** Decide the record shape and a
+- [x] **1.5 Output schema + size budget + emit JSON.** Decide the record shape and a
       filtering rule to keep the file reasonable (e.g. a minimum games/PA threshold to
       drop cup-of-coffee seasons). Write `game-data.json`.
       *Done when:* `game-data.json` exists, loads, and its size is acceptable for a web app.
