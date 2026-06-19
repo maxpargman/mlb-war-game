@@ -1,122 +1,96 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// Temporary probe screen for slice 2.1.
+// Lets you pick a franchise + year range and lists eligible players.
+// Will be replaced by real game UI in later slices.
 
-function App() {
-  const [count, setCount] = useState(0)
+import { useEffect, useState } from 'react'
+import {
+  loadData,
+  franchises,
+  eligiblePlayers,
+  yearBounds,
+  type PlayerVersion,
+} from './data'
+
+export default function App() {
+  const [ready, setReady] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const [fid, setFid] = useState('PHI')
+  const [yearLo, setYearLo] = useState(2000)
+  const [yearHi, setYearHi] = useState(2025)
+  const [players, setPlayers] = useState<PlayerVersion[]>([])
+
+  useEffect(() => {
+    loadData()
+      .then(() => setReady(true))
+      .catch((e: unknown) => setError(String(e)))
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    setPlayers(eligiblePlayers(fid, yearLo, yearHi))
+  }, [ready, fid, yearLo, yearHi])
+
+  if (error) return <p style={{ color: 'red' }}>Error: {error}</p>
+  if (!ready) return <p>Loading data…</p>
+
+  const { min, max } = yearBounds()
+  const franch = franchises()
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>MLB WAR Draft</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={{ padding: '1rem', fontFamily: 'monospace' }}>
+      <h1>MLB WAR Draft — data probe</h1>
 
-      <div className="ticks"></div>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <label>
+          Franchise{' '}
+          <select value={fid} onChange={e => setFid(e.target.value)}>
+            {franch.map(f => (
+              <option key={f.fid} value={f.fid}>{f.fn}</option>
+            ))}
+          </select>
+        </label>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <label>
+          Year from{' '}
+          <input
+            type="number" min={min} max={max} value={yearLo}
+            onChange={e => setYearLo(Number(e.target.value))}
+            style={{ width: '5rem' }}
+          />
+        </label>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <label>
+          to{' '}
+          <input
+            type="number" min={min} max={max} value={yearHi}
+            onChange={e => setYearHi(Number(e.target.value))}
+            style={{ width: '5rem' }}
+          />
+        </label>
+      </div>
+
+      <p>{players.length} eligible player-versions</p>
+
+      <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+        <thead>
+          <tr>
+            {['Name', 'Pos', 'Best WAR', 'Year'].map(h => (
+              <th key={h} style={{ textAlign: 'left', padding: '2px 12px', borderBottom: '1px solid #666' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {players.map(p => (
+            <tr key={`${p.id}|${p.pos}`}>
+              <td style={{ padding: '2px 12px' }}>{p.name}</td>
+              <td style={{ padding: '2px 12px' }}>{p.pos}</td>
+              <td style={{ padding: '2px 12px' }}>{p.bestWar.toFixed(2)}</td>
+              <td style={{ padding: '2px 12px' }}>{p.bestYear}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
-
-export default App

@@ -72,7 +72,7 @@ time-range settings stay flexible at runtime — do **not** pre-collapse to "bes
 
 Single-device, two-player hot-seat. All game state lives in the browser for now.
 
-- [ ] **2.1 Load data.** App loads `game-data.json`; a small data-access layer can query
+- [x] **2.1 Load data.** App loads `game-data.json`; a small data-access layer can query
       players by franchise, year range, and position.
       *Done when:* a temporary screen can list eligible players for a chosen team + range.
 - [ ] **2.2 Pre-game setup.** Screen to choose time-range mode: default (all years),
