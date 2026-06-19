@@ -32,21 +32,77 @@ app = pd.read_csv(RAW / "Appearances.csv")
 bat = bat.rename(columns={"player_ID": "playerID", "year_ID": "yearID", "team_ID": "teamID"})
 pitch = pitch.rename(columns={"player_ID": "playerID", "year_ID": "yearID", "team_ID": "teamID"})
 
-# Baseball-Reference uses different team codes than Lahman for several franchises.
-# Normalize BR → Lahman so the join keys align.
+# Baseball-Reference uses different team codes than Lahman for many franchises.
+# Auto-generated crosswalk by matching playerID+yearID across both sources.
 BR_TO_LAHMAN = {
-    "LAD": "LAN",  # Los Angeles Dodgers
-    "NYM": "NYN",  # New York Mets
-    "SFG": "SFN",  # San Francisco Giants
-    "SDP": "SDN",  # San Diego Padres
-    "KCR": "KCA",  # Kansas City Royals
-    "TBR": "TBA",  # Tampa Bay Rays
-    "TBD": "TBA",  # Tampa Bay Devil Rays (early)
-    "CHC": "CHN",  # Chicago Cubs
-    "CHW": "CHA",  # Chicago White Sox (BR uses CHW, Lahman uses CHA)
-    "STL": "SLN",  # St. Louis Cardinals (BR uses STL, Lahman uses SLN)
-    "FLA": "FLO",  # Florida Marlins (pre-2012)
-    "WSN": "WAS",  # Washington Nationals
+    "AC": "ACB",
+    "AG": "ACG",
+    "ATH": "PH1",
+    "BRA": "BR2",
+    "BTT": "BRF",
+    "BUF": "BFN",
+    "BWW": "BRP",
+    "CC": "CIC",
+    "CEN": "PH3",
+    "CHC": "CHN",
+    "CHI": "CHF",
+    "CHW": "CHA",
+    "CKK": "CN3",
+    "CLV": "CL4",
+    "COR": "CNU",
+    "CPI": "CHU",
+    "ECK": "BR1",
+    "FLA": "FLO",
+    "HAR": "HR1",
+    "IC": "CIC",
+    "IND": "IN3",
+    "KCA": "KC1",
+    "KCC": "KC2",
+    "KCP": "KCF",
+    "KCR": "KCA",
+    "KEK": "FW1",
+    "LAD": "LAN",
+    "LOU": "LS3",
+    "MAN": "MID",
+    "MAR": "BL4",
+    "MLG": "ML2",
+    "MLN": "ML1",
+    "NAT": "WS4",
+    "NHV": "NH1",
+    "NYG": "NY1",
+    "NYI": "NYP",
+    "NYM": "NYN",
+    "NYP": "NY4",
+    "NYU": "NY2",
+    "NYY": "NYA",
+    "OLY": "WS3",
+    "PBB": "PTP",
+    "PBS": "PTF",
+    "PHK": "PHU",
+    "PHQ": "PHP",
+    "RES": "ELI",
+    "ROC": "RC2",
+    "ROK": "RC1",
+    "SDP": "SDN",
+    "SEP": "SE1",
+    "SFG": "SFN",
+    "SLB": "SLA",
+    "SLM": "SLF",
+    "SLR": "SL1",
+    "STL": "SLN",
+    "STP": "SPU",
+    "SYR": "SR2",
+    "TBD": "TBA",
+    "TBR": "TBA",
+    "TC": "TIC",
+    "TOL": "TL1",
+    "TRO": "TRN",
+    "WAS": "WS9",
+    "WES": "KEO",
+    "WHS": "WAS",
+    "WSA": "WS2",
+    "WSH": "WS1",
+    "WSN": "WAS",
 }
 bat["teamID"] = bat["teamID"].replace(BR_TO_LAHMAN)
 pitch["teamID"] = pitch["teamID"].replace(BR_TO_LAHMAN)

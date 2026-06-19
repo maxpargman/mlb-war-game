@@ -61,7 +61,7 @@ time-range settings stay flexible at runtime — do **not** pre-collapse to "bes
       filtering rule to keep the file reasonable (e.g. a minimum games/PA threshold to
       drop cup-of-coffee seasons). Write `game-data.json`.
       *Done when:* `game-data.json` exists, loads, and its size is acceptable for a web app.
-- [ ] **1.6 Validate against known examples.** Acceptance test from the design doc:
+- [x] **1.6 Validate against known examples.** Acceptance test from the design doc:
       Harper-OF (PHI) ≈ 5.9 from 2021 and Harper-1B (PHI) ≈ 4.6 from 2024; plus a few
       more spot-checks across positions and eras.
       *Done when:* the known values match within rounding.
