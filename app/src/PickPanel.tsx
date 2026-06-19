@@ -61,6 +61,8 @@ export default function PickPanel({ state, onPick }: Props) {
 
       {available.length === 0 ? (
         <p style={styles.empty}>No eligible players — will reroll team.</p>
+      ) : !query.trim() ? (
+        <p style={styles.empty}>Start typing a name to search…</p>
       ) : filtered.length === 0 ? (
         <p style={styles.empty}>No players match "{query}"</p>
       ) : (
