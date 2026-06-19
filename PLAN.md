@@ -92,14 +92,14 @@ Single-device, two-player hot-seat. All game state lives in the browser for now.
       *Done when:* both cards update live as picks happen.
 - [x] **2.7 End + scoring.** Game ends when both lineups are full; show totals and winner.
       *Done when:* the higher total is declared correctly.
-- [ ] **2.8 Responsive polish.** Clean layout on desktop and phone.
+- [x] **2.8 Responsive polish.** Clean layout on desktop and phone.
       *Done when:* playable and readable on both without horizontal scrolling.
 
 ---
 
 ## Phase 3 — Ship the local version
 
-- [ ] **3.1 Static deploy.** Deploy the static site (e.g. Vercel/Netlify) so it's
+- [x] **3.1 Static deploy.** Live at https://mlb-war-draft.vercel.app/ Deploy the static site (e.g. Vercel/Netlify) so it's
       playable worldwide on one device.
       *Done when:* a public URL loads and plays.
       *Gate:* `LICENSING.md` decision must be resolved before this is a **commercial** launch.
