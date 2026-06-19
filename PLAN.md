@@ -75,7 +75,7 @@ Single-device, two-player hot-seat. All game state lives in the browser for now.
 - [x] **2.1 Load data.** App loads `game-data.json`; a small data-access layer can query
       players by franchise, year range, and position. DataProbe.tsx saved as permanent reference.
       *Done when:* a temporary screen can list eligible players for a chosen team + range.
-- [ ] **2.2 Pre-game setup.** Screen to choose time-range mode: default (all years),
+- [x] **2.2 Pre-game setup.** Screen to choose time-range mode: default (all years),
       custom inclusive range, or hard mode (per-round randomized range).
       *Done when:* the chosen settings carry into a game session.
 - [ ] **2.3 Draft loop skeleton.** 11 rounds, snake order, a random team shown each round,

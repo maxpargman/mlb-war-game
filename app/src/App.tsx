@@ -1,59 +1,87 @@
 import { useEffect, useState } from 'react'
-import { loadData, yearBounds } from './data'
+import { loadData } from './data'
 import SetupScreen from './SetupScreen'
-import type { GameSettings } from './types'
+import DraftScreen from './DraftScreen'
+import LineupCard from './LineupCard'
+import type { GameSettings, GameState } from './types'
+
+type AppPhase = 'loading' | 'setup' | 'draft' | 'done'
 
 export default function App() {
-  const [ready, setReady] = useState(false)
+  const [phase, setPhase] = useState<AppPhase>('loading')
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettings] = useState<GameSettings | null>(null)
+  const [finalState, setFinalState] = useState<GameState | null>(null)
 
   useEffect(() => {
     loadData()
-      .then(() => setReady(true))
+      .then(() => setPhase('setup'))
       .catch((e: unknown) => setError(String(e)))
   }, [])
 
   if (error) return <p style={{ color: 'red', padding: '1rem' }}>Error: {error}</p>
-  if (!ready) return <p style={{ padding: '1rem' }}>Loading data…</p>
+  if (phase === 'loading') return <p style={{ padding: '1rem', color: '#f1f5f9' }}>Loading data…</p>
 
-  if (!settings) {
-    return <SetupScreen onStart={setSettings} />
+  if (phase === 'setup' || !settings) {
+    return <SetupScreen onStart={s => { setSettings(s); setPhase('draft') }} />
   }
 
-  return <GamePlaceholder settings={settings} onBack={() => setSettings(null)} />
-}
+  if (phase === 'draft') {
+    return (
+      <DraftScreen
+        settings={settings}
+        onEnd={gs => { setFinalState(gs); setPhase('done') }}
+      />
+    )
+  }
 
-function GamePlaceholder({ settings, onBack }: { settings: GameSettings; onBack: () => void }) {
-  const { min, max } = yearBounds()
-  const rangeLabel =
-    settings.mode === 'all'
-      ? `All years (${min}–${max})`
-      : settings.mode === 'custom'
-      ? `${settings.yearLo}–${settings.yearHi}`
-      : `Hard mode (randomized per round)`
+  // Done screen
+  const lineups = finalState!.lineups
+  const totals = lineups.map(l => l.reduce((s, sl) => s + (sl.pick?.war ?? 0), 0))
+  const winner = totals[0] > totals[1] ? 'Player 1' : totals[1] > totals[0] ? 'Player 2' : 'Tie!'
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: '#0f172a', color: '#f1f5f9',
-      fontFamily: 'system-ui, sans-serif', padding: '1.5rem',
+      minHeight: '100vh',
+      background: '#0f172a',
+      color: '#f1f5f9',
+      fontFamily: 'system-ui, sans-serif',
+      padding: '1.25rem 1.5rem',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '1rem',
     }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Draft starting…</h1>
-      <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>Time range: <strong style={{ color: '#f1f5f9' }}>{rangeLabel}</strong></p>
-      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '2rem' }}>
-        (Game UI comes in slice 2.3)
-      </p>
-      <button
-        onClick={onBack}
-        style={{
-          padding: '0.5rem 1.5rem', borderRadius: '6px', border: '1px solid #334155',
-          background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem',
-        }}
-      >
-        ← Back to setup
-      </button>
+      {/* Result banner */}
+      <div style={{
+        width: '100%', maxWidth: '900px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem',
+      }}>
+        <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Draft complete</span>
+        <span style={{ fontWeight: 800, fontSize: '1.5rem', color: '#facc15' }}>{winner} wins!</span>
+        <button
+          onClick={() => { setSettings(null); setFinalState(null); setPhase('setup') }}
+          style={{
+            padding: '0.4rem 1.25rem', borderRadius: '6px',
+            border: '1px solid #334155', background: 'transparent',
+            color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem',
+          }}
+        >
+          Play again
+        </button>
+      </div>
+
+      {/* Side-by-side lineup cards — same component as draft screen */}
+      <div style={{ width: '100%', maxWidth: '900px', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+        {lineups.map((lineup, pi) => (
+          <LineupCard
+            key={pi}
+            playerName={`Player ${pi + 1}`}
+            lineup={lineup}
+            totalWar={totals[pi]}
+          />
+        ))}
+      </div>
     </div>
   )
 }

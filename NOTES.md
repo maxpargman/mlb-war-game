@@ -35,6 +35,17 @@ Raw files live in `data/raw/` (git-ignored, not redistributable).
   lists eligible players with their best WAR. Saved from slice 2.1.
   To view: `cd app && npm run preview` → http://localhost:4173
 
+## Deferred UI ideas
+
+- **Team logo** next to franchise name on draft screen. MLB logo assets aren't freely redistributable;
+  options: ESPN CDN URLs (fragile), Sportsdb API (free, community logos), or SVG set purchased/licensed.
+  Hook: `<img src={logoUrl(fid)} />` next to `<span>{franchise.fn}</span>` in DraftScreen topBar.
+
+- **Player headshot** next to player name in LineupCard. Baseball-Reference has photos but no public API.
+  Options: MLB Stats API (`https://img.mlbstatic.com/mlb-photos/...` keyed by MLBAM id), requires
+  mapping Lahman playerID → MLBAM id (available in `data/raw/People.csv` column `mlbID`).
+  Hook: add optional `photoUrl` to `DraftPick`; render `<img>` in `nameCell` of LineupCard if present.
+
 ## game-data.json field names
 
 The JSON uses compact keys to keep the file small (~6 MB uncompressed, ~1.6 MB gzipped):
