@@ -1,0 +1,10 @@
+# Raw data files are large and not redistributable
+data/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+
+# Generated output (will be committed when ready)
+data/game-data.json

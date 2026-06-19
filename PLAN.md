@@ -39,7 +39,7 @@ Goal: turn the two free sources into one static `game-data.json` the app can loa
 Keep data at the **season grain** (one record per player/team/year/position) so the
 time-range settings stay flexible at runtime — do **not** pre-collapse to "best WAR."
 
-- [ ] **1.1 Acquire + inspect raw data.** Six raw files in `data/raw/`; `inspect_data.py`
+- [x] **1.1 Acquire + inspect raw data.** Six raw files in `data/raw/`; `inspect_data.py`
       runs and prints file summaries + the Bryce Harper sanity check.
       *Done when:* WAR-by-season-and-team is visible, and Harper's OF years vs 1B years
       are distinguishable in the position data.
