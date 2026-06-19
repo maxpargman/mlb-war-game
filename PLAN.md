@@ -78,7 +78,7 @@ Single-device, two-player hot-seat. All game state lives in the browser for now.
 - [x] **2.2 Pre-game setup.** Screen to choose time-range mode: default (all years),
       custom inclusive range, or hard mode (per-round randomized range).
       *Done when:* the chosen settings carry into a game session.
-- [ ] **2.3 Draft loop skeleton.** 11 rounds, snake order, a random team shown each round,
+- [x] **2.3 Draft loop skeleton.** 11 rounds, snake order, a random team shown each round,
       no team repeats, dead-end reroll when a team can't fill any open slot.
       *Done when:* a full 11-round turn sequence runs end to end with placeholder picks.
 - [ ] **2.4 Pick flow.** Within the shown team, search a player, choose a position-version,

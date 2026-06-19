@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { franchises } from './data'
 import { initGame, autoPickBest, applyPick, hasDraftablePlayer } from './engine'
 import { snakeOrder } from './types'
-import type { GameSettings, GameState } from './types'
+import type { GameSettings, GameState, DraftPick } from './types'
 import LineupCard from './LineupCard'
+import PickPanel from './PickPanel'
 
 interface Props {
   settings: GameSettings
@@ -22,8 +23,19 @@ function rerollFranchise(state: GameState): GameState {
   return { ...state, roundFranchises: next }
 }
 
+// Advance through rerolls until there's at least one draftable player, or we run out of franchises.
+function resolveState(state: GameState): GameState {
+  let s = state
+  let attempts = 0
+  while (!hasDraftablePlayer(s, s.roundFranchises[s.round].fid) && attempts < 30) {
+    s = rerollFranchise(s)
+    attempts++
+  }
+  return s
+}
+
 export default function DraftScreen({ settings, onEnd }: Props) {
-  const [state, setState] = useState<GameState>(() => initGame(settings))
+  const [state, setState] = useState<GameState>(() => resolveState(initGame(settings)))
 
   if (state.phase === 'done') {
     onEnd(state)
@@ -36,16 +48,14 @@ export default function DraftScreen({ settings, onEnd }: Props) {
   const order = snakeOrder(round)
   const isFirstPick = order.indexOf(turn as 0 | 1) === 0
 
+  function handlePick(pick: DraftPick, slotIndex: number) {
+    setState(s => resolveState(applyPick(s, pick, slotIndex)))
+  }
+
   function handleAutoPick() {
-    let s = state
-    let attempts = 0
-    while (!hasDraftablePlayer(s, s.roundFranchises[s.round].fid) && attempts < 30) {
-      s = rerollFranchise(s)
-      attempts++
-    }
-    const result = autoPickBest(s)
+    const result = autoPickBest(state)
     if (!result) return
-    setState(applyPick(s, result.pick, result.slotIndex))
+    handlePick(result.pick, result.slotIndex)
   }
 
   const totals = state.lineups.map(l => l.reduce((sum, sl) => sum + (sl.pick?.war ?? 0), 0))
@@ -62,9 +72,12 @@ export default function DraftScreen({ settings, onEnd }: Props) {
         <span style={styles.turnLabel}>{PLAYER_NAMES[turn]}'s pick{!isFirstPick ? ' (2nd)' : ''}</span>
       </div>
 
-      {/* Action */}
-      <button onClick={handleAutoPick} style={styles.btn}>
-        Auto-pick best available
+      {/* Pick panel */}
+      <PickPanel state={state} onPick={handlePick} />
+
+      {/* Auto-pick fallback */}
+      <button onClick={handleAutoPick} style={styles.autoBtn}>
+        Auto-pick
       </button>
 
       {/* Side-by-side lineup cards */}
@@ -114,14 +127,15 @@ const styles: Record<string, React.CSSProperties> = {
   franchiseName: { fontWeight: 800, fontSize: '1.4rem' },
   yearRange: { color: '#94a3b8', fontSize: '0.8rem' },
   turnLabel: { fontWeight: 600, fontSize: '0.95rem', color: '#93c5fd' },
-  btn: {
-    padding: '0.6rem 1.75rem',
-    fontSize: '0.95rem',
-    fontWeight: 700,
-    borderRadius: '8px',
-    border: 'none',
-    background: '#3b82f6',
-    color: '#fff',
+  autoBtn: {
+    alignSelf: 'flex-end',
+    padding: '0.35rem 0.9rem',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    background: 'transparent',
+    color: '#64748b',
     cursor: 'pointer',
   },
   lineupRow: {
