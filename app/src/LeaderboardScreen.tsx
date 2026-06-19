@@ -11,6 +11,23 @@ interface Props {
   onPlayAgain: () => void
 }
 
+const MODE_LABEL: Record<DailyMode, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
+const POS_EMOJI: Record<string, string> = {
+  C: '🎯', '1B': '1️⃣', '2B': '2️⃣', '3B': '3️⃣', SS: '⚡', OF: '🌿', P: '⚾',
+}
+
+function buildShareText(date: string, mode: DailyMode, score: number, lineup: LineupSlot[]): string {
+  const header = `⚾ MLB WAR Draft — Daily ${MODE_LABEL[mode]}`
+  const dateStr = `📅 ${date}`
+  const scoreStr = `🏆 ${score.toFixed(1)} WAR`
+  const picks = lineup
+    .filter(sl => sl.pick)
+    .map(sl => `${POS_EMOJI[sl.pos] ?? '▪️'} ${sl.pick!.name} · ${sl.pick!.war.toFixed(1)}`)
+    .join('\n')
+  const link = 'https://mlb-war-draft.vercel.app/'
+  return [header, dateStr, scoreStr, '', picks, '', link].join('\n')
+}
+
 export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: Props) {
   const [username, setUsername] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -18,6 +35,7 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
   const [error, setError] = useState<string | null>(null)
   const [board, setBoard] = useState<DailyScore[]>([])
   const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
   const date = todayString()
 
   useEffect(() => {
@@ -47,6 +65,18 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
     }
   }
 
+  async function handleShare() {
+    const text = buildShareText(date, mode, score, lineup)
+    const nav = navigator as Navigator & { share?: (d: object) => Promise<void> }
+    if (nav.share) {
+      await nav.share({ text })
+    } else {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.header}>
@@ -57,6 +87,9 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
         <div style={styles.scoreBox}>
           <div style={styles.scoreLabel}>Your score</div>
           <div style={styles.scoreValue}>{score.toFixed(1)} WAR</div>
+          <button onClick={handleShare} style={styles.shareBtn}>
+            {copied ? '✓ Copied!' : 'share' in navigator ? '↑ Share' : '⎘ Copy score'}
+          </button>
         </div>
       </div>
 
@@ -156,6 +189,17 @@ const styles: Record<string, React.CSSProperties> = {
   scoreBox: { textAlign: 'right' },
   scoreLabel: { color: '#64748b', fontSize: '0.8rem' },
   scoreValue: { fontWeight: 800, fontSize: '1.75rem', color: '#facc15' },
+  shareBtn: {
+    marginTop: '0.4rem',
+    padding: '0.3rem 0.75rem',
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    background: 'transparent',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+  },
   submitBox: {
     width: '100%',
     maxWidth: '500px',
