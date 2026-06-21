@@ -81,14 +81,50 @@ before = len(war)
 war = war[keep].copy()
 print(f"Rows before filter: {before:,}   after: {len(war):,}   dropped: {before - len(war):,}")
 
-# --- Attach player names ---
-name_map = (
-    people[["playerID", "nameFirst", "nameLast"]]
-    .assign(name=lambda d: d["nameFirst"] + " " + d["nameLast"])
-    [["playerID", "name"]]
-    .set_index("playerID")["name"]
+# --- Load Chadwick Register for name suffixes ---
+import glob as _glob
+REG_DIR = Path(__file__).parent / "raw" / "chadwichbureau" / "register-master" / "data"
+reg = pd.concat(
+    [pd.read_csv(f, low_memory=False) for f in sorted(REG_DIR.glob("people-*.csv"))],
+    ignore_index=True,
+)
+reg_mlb = reg[reg["key_bbref"].notna() & (reg["key_bbref"].astype(str).str.strip() != "")].copy()
+reg_mlb["key_bbref"] = reg_mlb["key_bbref"].astype(str).str.strip()
+
+# Junk values in name_suffix that are not real suffixes (confirmed in diagnostic pass)
+JUNK_SUFFIXES = {"David Armstrong", "Eli"}
+suffix_map = (
+    reg_mlb[["key_bbref", "name_suffix"]]
+    .dropna(subset=["name_suffix"])
+    .assign(name_suffix=lambda d: d["name_suffix"].astype(str).str.strip())
+    .query("name_suffix != '' and name_suffix not in @JUNK_SUFFIXES")
+    .set_index("key_bbref")["name_suffix"]
     .to_dict()
 )
+
+# Manual overrides: players whose suffix is absent from the register
+# Fathers without a suffix are correct as-is; only sons (and one Sr.) need overrides.
+# Sandy Alomar Sr./Jr. — register has neither; Guerrero/Tatis/DeShields/Peña fathers
+# carry no suffix (correct), only the sons need Jr.
+SUFFIX_OVERRIDES = {
+    "alomasa01": "Sr.",
+    "alomasa02": "Jr.",
+    "guerrvl02": "Jr.",
+    "tatisfe02": "Jr.",
+    "deshide02": "Jr.",
+    "penato03":  "Jr.",
+}
+suffix_map.update(SUFFIX_OVERRIDES)
+
+# --- Attach player names ---
+def build_name(row: pd.Series) -> str:
+    base = f"{row['nameFirst']} {row['nameLast']}"
+    suffix = suffix_map.get(row["playerID"])
+    return f"{base} {suffix}" if suffix else base
+
+_people_sub = people[["playerID", "nameFirst", "nameLast"]].copy()
+_people_sub["name"] = _people_sub.apply(build_name, axis=1)
+name_map = _people_sub.set_index("playerID")["name"].to_dict()
 war["name"] = war["playerID"].map(name_map)
 
 # --- Attach franchise_name ---
