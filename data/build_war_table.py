@@ -28,12 +28,43 @@ positions = pd.read_csv(DATA / "positions.csv")
 bat = pd.read_csv(RAW / "war_daily_bat.txt", na_values="NULL", low_memory=False)
 pitch = pd.read_csv(RAW / "war_daily_pitch.txt", na_values="NULL", low_memory=False)
 app = pd.read_csv(RAW / "Appearances.csv")
+people = pd.read_csv(RAW / "People.csv")
 
 bat = bat.rename(columns={"player_ID": "playerID", "year_ID": "yearID", "team_ID": "teamID"})
 pitch = pitch.rename(columns={"player_ID": "playerID", "year_ID": "yearID", "team_ID": "teamID"})
 
+# --- Resolve WAR-file player IDs (Baseball-Reference's own bbrefID scheme) to
+# Lahman's playerID scheme ---
+# The two ID schemes usually look identical, but diverge for: (a) players known
+# by initials, where BR keeps the period ("burnea.01") and Lahman doesn't
+# ("burneaj01"), (b) apostrophes in names, and (c) same-surname pairs where BR
+# and Lahman assigned the "01"/"02" suffix in opposite order (e.g. Lahman's
+# allento01 is Todd Allen, but Todd Allen's own bbrefID is allento02 — a naive
+# string-equality join silently swaps these two players' stats). People.csv's
+# bbrefID column is the authoritative crosswalk; fall back to treating the ID
+# as already-Lahman-format only when it isn't a known bbrefID (mostly very old
+# 19th-century players absent from bbrefID coverage).
+_bbref_to_lahman = people.dropna(subset=["bbrefID"]).set_index("bbrefID")["playerID"].to_dict()
+_lahman_ids = set(people["playerID"])
+
+
+def resolve_lahman_id(bbref_id: str):
+    if bbref_id in _bbref_to_lahman:
+        return _bbref_to_lahman[bbref_id]
+    if bbref_id in _lahman_ids:
+        return bbref_id
+    return None  # not in Lahman at all (too new, or too obscure) — drops out downstream
+
+
+bat["playerID"] = bat["playerID"].map(resolve_lahman_id)
+pitch["playerID"] = pitch["playerID"].map(resolve_lahman_id)
+
 # Baseball-Reference uses different team codes than Lahman for many franchises.
 # Auto-generated crosswalk by matching playerID+yearID across both sources.
+# NOTE: "ATH" is ambiguous — BR used it for the 1871-1875 Philadelphia Athletics
+# *and* reused it in 2025 for the current Athletics (after they dropped "Oakland"
+# from the name). Lahman itself already uses "ATH" for the modern team, so the
+# crosswalk below must only apply to the historical (pre-2025) rows.
 BR_TO_LAHMAN = {
     "AC": "ACB",
     "AG": "ACG",
@@ -104,8 +135,13 @@ BR_TO_LAHMAN = {
     "WSH": "WS1",
     "WSN": "WAS",
 }
-bat["teamID"] = bat["teamID"].replace(BR_TO_LAHMAN)
-pitch["teamID"] = pitch["teamID"].replace(BR_TO_LAHMAN)
+def apply_team_crosswalk(df: pd.DataFrame) -> None:
+    modern_ath = (df["teamID"] == "ATH") & (df["yearID"] >= 2025)
+    df.loc[~modern_ath, "teamID"] = df.loc[~modern_ath, "teamID"].replace(BR_TO_LAHMAN)
+
+
+apply_team_crosswalk(bat)
+apply_team_crosswalk(pitch)
 
 JOIN_KEYS = ["playerID", "yearID", "teamID", "stint_ID"]
 bat_key = bat[JOIN_KEYS + ["WAR"]].copy()
@@ -166,8 +202,6 @@ result.to_csv(DATA / "war_positions.csv", index=False)
 print(f"Wrote {len(result):,} rows to war_positions.csv")
 
 # --- Spot checks ---
-people = pd.read_csv(RAW / "People.csv")
-
 def get_pid(first, last):
     return people[(people["nameFirst"] == first) & (people["nameLast"] == last)]["playerID"].iloc[0]
 
@@ -185,3 +219,7 @@ print("=" * 60)
 show("Bryce", "Harper", "PHI")
 show("Shohei", "Ohtani")
 show("Mike", "Piazza")
+show("Roy", "Halladay")
+show("Nick", "Kurtz", "ATH")
+show("A. J.", "Burnett")
+show("R. A.", "Dickey")

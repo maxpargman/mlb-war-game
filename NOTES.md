@@ -80,17 +80,46 @@ Hard mode should offer two settings after selecting it on the setup screen:
 Each round, a random start year is drawn within the outer window such that
 [start, start + window] stays inside it. Both team and year range are randomized per round.
 
-## Deferred: player name accuracy
+## Fixed: players silently missing from the dataset
 
-Player names come from Lahman's `People.csv` (nameFirst + nameLast). Some names are wrong or
-outdated — e.g. "Bobby Witt" instead of "Bobby Witt Jr.", missing suffixes (Jr., Sr., III).
-To fix: audit `People.csv` for known suffixes and patch the relevant rows, or override a small
-lookup table in `build_game_data.py`. Verify against Baseball-Reference player pages.
+`build_war_table.py` joined the Baseball-Reference WAR files onto Lahman's `Appearances.csv`/
+`People.csv` assuming the two files used identical player IDs. They don't, always:
+- BR keeps periods for initials-named players (`burnea.01`) where Lahman doesn't (`burneaj01`).
+- Apostrophes in names are encoded differently between the two sources.
+- For a chunk of same-surname pairs, BR and Lahman assigned the `01`/`02` suffix in *opposite*
+  order (Lahman's `allento01` is Todd Allen, but Todd Allen's own bbrefID is `allento02`) — a
+  naive string-equality join silently swapped these players' stats onto the wrong person.
+
+Fixed by resolving every WAR-file ID through Lahman's `bbrefID` column (the authoritative
+crosswalk) before merging, with a fallback to direct equality only for IDs absent from
+`bbrefID` (mostly pre-1900 players). Recovered ~340 players including Roy Halladay-tier names
+(A.J. Burnett, R.A. Dickey, J.D. Drew).
+
+Separately, `"ATH"` was double-booked in the BR_TO_LAHMAN team crosswalk: it meant the 1871-75
+Philadelphia Athletics *and*, after 2025, got reused by BR for the current Athletics (post
+"Oakland" rebrand). The crosswalk blindly remapped every `ATH` row to `PH1`, wiping out the
+entire current A's roster (58 players in 2025 alone, incl. Nick Kurtz). Fixed by only applying
+the historical remap for years before 2025.
+
+**Known residual gap:** ~130 players (2026 rookies/prospects) have zero Lahman record at all —
+Lahman's `People.csv` snapshot hasn't caught up to the current season. No local fix; resolves
+itself whenever Lahman cuts a new release. Re-run the full pipeline (`build_positions.py` →
+`build_war_table.py` → `build_game_data.py`) after refreshing the raw Lahman files to pick up
+newly-added players.
 
 ## Deferred UI tweaks
 
 - **Pick panel height** — the scrollable player list (`pick-list`) is currently `max-height: 40vh`.
   User wants it shorter. Tune `max-height` in `layout.css` once overall layout is finalized.
+
+## Deferred: instructions / how to play page
+
+Add a page or modal explaining the game rules. Should cover:
+- What WAR is and why it matters
+- How the draft works (snake order, 11 rounds, one pick per position)
+- What each mode does (2-player, Daily Easy/Medium/Hard)
+- How scoring works (total WAR of your lineup wins)
+- Accessible from the setup screen (e.g. a "How to Play" link)
 
 ## Deferred UI ideas
 
