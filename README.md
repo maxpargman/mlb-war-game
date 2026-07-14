@@ -19,3 +19,10 @@ A two-player hot-seat browser game where players draft real MLB players by Wins 
 - **WAR:** Baseball-Reference (bWAR)
 - **Player/team history:** Lahman Baseball Database (CC BY-SA 3.0)
 
+## Tests
+
+```bash
+cd app
+npm test
+```
+

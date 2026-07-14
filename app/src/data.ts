@@ -29,6 +29,11 @@ export function getDb(): Season[] {
   return _db
 }
 
+// Test-only: seed the in-memory db directly, bypassing the network fetch.
+export function __setDbForTesting(db: Season[]): void {
+  _db = db
+}
+
 // Returns every unique franchise {fid, fn} sorted by display name.
 export function franchises(): { fid: string; fn: string }[] {
   const db = getDb()
