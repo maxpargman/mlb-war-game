@@ -51,7 +51,7 @@ Reported missing by users: **Robin Yount (Brewers), Nick Kurtz (Athletics), Fran
 
 ## Phase 2 — Test foundation
 
-- [ ] **2.1 Vitest setup + core suite.** Add Vitest (dev-dependency only, nothing deployed). Cover: `engine.ts` (snake order, no duplicate person across both boards, one position-version per person, dead-end detection, applyPick immutability), `daily.ts` (same date+mode ⇒ identical schedule; different dates differ; mode offsets work), and `data.ts` core queries (best-WAR-per-player/position within franchise + year range). Keep it lean — test rules whose breakage is expensive and hard to notice. No UI tests.
+- [x] **2.1 Vitest setup + core suite.** Add Vitest (dev-dependency only, nothing deployed). Cover: `engine.ts` (snake order, no duplicate person across both boards, one position-version per person, dead-end detection, applyPick immutability), `daily.ts` (same date+mode ⇒ identical schedule; different dates differ; mode offsets work), and `data.ts` core queries (best-WAR-per-player/position within franchise + year range). Keep it lean — test rules whose breakage is expensive and hard to notice. No UI tests.
   *Done when:* suite runs in seconds via one command; all tests pass; README notes the command.
 
 ---
