@@ -10,6 +10,8 @@ __pycache__/
 data/positions.csv
 data/war_positions.csv
 data/pipeline_v2/team_mapping.csv
+data/pipeline_v2/war_ingested.csv
+data/pipeline_v2/war_ingestion_exceptions.csv
 
 # plans
 Max_Plan.md

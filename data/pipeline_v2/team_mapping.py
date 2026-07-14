@@ -47,6 +47,7 @@ from pathlib import Path
 import pandas as pd
 
 from loaders import load_teams, load_teams_franchises, load_people, load_appearances, load_war_bat, load_war_pitch
+from id_crosswalk import build_bbref_crosswalk
 
 OVERLAP_THRESHOLD = 0.90
 OUT_PATH = Path(__file__).parent / "team_mapping.csv"
@@ -95,7 +96,7 @@ def find_unmapped_br_team_years(
 
 
 def _bbref_to_lahman_resolver(people: pd.DataFrame):
-    bbref_to_lahman = people.dropna(subset=["bbrefID"]).set_index("bbrefID")["playerID"].to_dict()
+    bbref_to_lahman = build_bbref_crosswalk(people)
     lahman_ids = set(people["playerID"])
 
     def resolve(bbref_id: str) -> str | None:
