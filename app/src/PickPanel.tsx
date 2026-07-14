@@ -10,6 +10,21 @@ interface Props {
   onPick: (pick: DraftPick, slotIndex: number) => void
 }
 
+// Case-fold, strip accents/diacritics, and drop apostrophes/periods so search
+// matches regardless of how the user types a name (e.g. "pena" finds "Peña",
+// "oday" finds "O'Day").
+function normalize(s: string): string {
+  const COMBINING_MARK_LO = 0x0300
+  const COMBINING_MARK_HI = 0x036f
+  const stripped = Array.from(s.normalize('NFD'))
+    .filter(ch => {
+      const code = ch.codePointAt(0) ?? 0
+      return code < COMBINING_MARK_LO || code > COMBINING_MARK_HI
+    })
+    .join('')
+  return stripped.replace(/['’.]/g, '').toLowerCase()
+}
+
 export default function PickPanel({ state, onPick }: Props) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -27,8 +42,8 @@ export default function PickPanel({ state, onPick }: Props) {
   }, [fid, yearLo, yearHi, state.takenPlayerIds, lineup])
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const result = q ? available.filter(p => p.name.toLowerCase().includes(q)) : available
+    const q = normalize(query.trim())
+    const result = q ? available.filter(p => normalize(p.name).includes(q)) : available
     const lastName = (name: string) => name.slice(name.lastIndexOf(' ') + 1)
     return [...result].sort((a, b) => lastName(a.name).localeCompare(lastName(b.name)))
   }, [available, query])

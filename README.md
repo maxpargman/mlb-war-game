@@ -19,15 +19,3 @@ A two-player hot-seat browser game where players draft real MLB players by Wins 
 - **WAR:** Baseball-Reference (bWAR)
 - **Player/team history:** Lahman Baseball Database (CC BY-SA 3.0)
 
-## Dev setup
-
-```bash
-# Data pipeline (requires Python + conda env `mlbwar`)
-conda activate mlbwar
-python data/build_game_data.py
-
-# App
-cd app
-npm install
-npm run dev
-```
