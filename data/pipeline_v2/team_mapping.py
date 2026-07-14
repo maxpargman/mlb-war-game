@@ -108,19 +108,17 @@ def _bbref_to_lahman_resolver(people: pd.DataFrame):
     return resolve
 
 
-def verify_roster_overlap(
+def compute_roster_overlap(
     mapping: pd.DataFrame,
     bat: pd.DataFrame,
     pitch: pd.DataFrame,
     appearances: pd.DataFrame,
     people: pd.DataFrame,
-    active_franchises: set[str],
-    threshold: float = OVERLAP_THRESHOLD,
-) -> tuple[int, list[dict], list[dict]]:
-    """Returns (checked_count, blocking_failures, deferred_failures). Only
-    active-franchise team-years can block the gate; non-active-franchise
-    failures (currently: Negro League, 1923-1948) are reported but deferred
-    per the scoping decision above."""
+) -> list[dict]:
+    """One result per (brCode, yearID) mapping row that has WAR-file data —
+    rows with no WAR-file data for that team-year are skipped (nothing to
+    verify). Each result carries the overlap ratio plus both rosters, so it
+    can power both the failure report and the human-readable summary."""
     resolve = _bbref_to_lahman_resolver(people)
 
     br_rosters: dict[tuple[str, int], set[str]] = {}
@@ -132,46 +130,43 @@ def verify_roster_overlap(
     for (team, year), grp in appearances.groupby(["teamID", "yearID"]):
         lahman_rosters[(team, year)] = set(grp["playerID"].tolist())
 
-    checked = 0
-    blocking: list[dict] = []
-    deferred: list[dict] = []
+    results: list[dict] = []
     for row in mapping.itertuples(index=False):
-        key = (row.brCode, row.yearID)
-        br_ids = br_rosters.get(key)
+        br_ids = br_rosters.get((row.brCode, row.yearID))
         if not br_ids:
-            continue  # this team-year has no WAR-file rows at all; nothing to verify
-        checked += 1
+            continue
 
         resolved = {resolve(pid) for pid in br_ids}
         resolved.discard(None)
         lahman_ids = lahman_rosters.get((row.teamID, row.yearID), set())
+        overlap_ratio = (len(resolved & lahman_ids) / len(resolved)) if resolved else 0.0
 
-        failure = None
-        if not resolved:
-            failure = {
-                "brCode": row.brCode, "yearID": row.yearID, "teamID": row.teamID,
-                "reason": "none of BR's roster resolved to a Lahman playerID",
-                "br_roster": sorted(br_ids), "lahman_roster": sorted(lahman_ids),
-                "overlap": 0.0,
-            }
-        else:
-            overlap_ratio = len(resolved & lahman_ids) / len(resolved)
-            if overlap_ratio < threshold:
-                failure = {
-                    "brCode": row.brCode, "yearID": row.yearID, "teamID": row.teamID,
-                    "reason": f"overlap {overlap_ratio:.0%} below {threshold:.0%} threshold",
-                    "br_roster": sorted(resolved), "lahman_roster": sorted(lahman_ids),
-                    "overlap": overlap_ratio,
-                }
+        results.append({
+            "brCode": row.brCode, "yearID": row.yearID, "teamID": row.teamID, "franchID": row.franchID,
+            "overlap": overlap_ratio,
+            "br_roster": sorted(resolved) if resolved else sorted(br_ids),
+            "lahman_roster": sorted(lahman_ids),
+            "reason": (
+                "none of BR's roster resolved to a Lahman playerID" if not resolved
+                else f"overlap {overlap_ratio:.0%} below {OVERLAP_THRESHOLD:.0%} threshold"
+            ),
+        })
+    return results
 
-        if failure is None:
+
+def partition_failures(
+    results: list[dict], active_franchises: set[str], threshold: float = OVERLAP_THRESHOLD
+) -> tuple[list[dict], list[dict]]:
+    """Splits below-threshold results into (blocking, deferred) — only
+    active-franchise team-years can block the gate; non-active-franchise
+    failures (currently: Negro League, 1923-1948) are deferred per the
+    scoping decision documented above."""
+    blocking, deferred = [], []
+    for r in results:
+        if r["overlap"] >= threshold:
             continue
-        if row.franchID in active_franchises:
-            blocking.append(failure)
-        else:
-            deferred.append(failure)
-
-    return checked, blocking, deferred
+        (blocking if r["franchID"] in active_franchises else deferred).append(r)
+    return blocking, deferred
 
 
 def _print_failures(failures: list[dict]) -> None:
@@ -180,6 +175,56 @@ def _print_failures(failures: list[dict]) -> None:
         print(f"    BR roster ({len(f['br_roster'])}):     {f['br_roster']}")
         print(f"    Lahman roster ({len(f['lahman_roster'])}): {f['lahman_roster']}")
         print()
+
+
+def build_mapping_summary(
+    mapping: pd.DataFrame, results: list[dict], teams_franchises: pd.DataFrame, active_franchises: set[str]
+) -> str:
+    """Human-readable view of the mapping table: every distinct (BR code ->
+    Lahman teamID) pairing, compressed into year ranges, grouped by
+    franchise, with the roster-overlap score for each range. Scoped to
+    today's 30 active franchises — that's the game's actual universe, and
+    matches what slice 3.6's manual audit will review."""
+    overlap_by_key = {(r["brCode"], r["yearID"]): r["overlap"] for r in results}
+    franch_names = teams_franchises.set_index("franchID")["franchName"].to_dict()
+
+    active = mapping[mapping["franchID"].isin(active_franchises)].sort_values(["franchID", "yearID"])
+
+    lines = []
+    for franchID, group in sorted(active.groupby("franchID"), key=lambda kv: franch_names.get(kv[0], kv[0])):
+        rows = list(group.itertuples(index=False))
+        lines.append(f"{franchID} ({franch_names.get(franchID, franchID)} franchise):")
+
+        i = 0
+        while i < len(rows):
+            j = i
+            while (
+                j + 1 < len(rows)
+                and rows[j + 1].brCode == rows[i].brCode
+                and rows[j + 1].teamID == rows[i].teamID
+                and rows[j + 1].yearID == rows[j].yearID + 1
+            ):
+                j += 1
+
+            start_year, end_year = rows[i].yearID, rows[j].yearID
+            br_code, lahman_team = rows[i].brCode, rows[i].teamID
+            overlaps = [overlap_by_key[(br_code, y)] for y in range(start_year, end_year + 1) if (br_code, y) in overlap_by_key]
+
+            if overlaps:
+                score = f"overlap {sum(overlaps) / len(overlaps):.1%}"
+                unverified = (end_year - start_year + 1) - len(overlaps)
+                if unverified:
+                    score += f", {unverified} yr(s) unverified (no WAR-file data)"
+            else:
+                score = "no WAR-file data to verify"
+
+            year_range = f"{start_year}" if start_year == end_year else f"{start_year}-{end_year}"
+            lines.append(f'  BR "{br_code}" {year_range:<10s} -> Lahman {lahman_team:6s} ({score})')
+            i = j + 1
+
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 def main() -> None:
@@ -213,10 +258,9 @@ def main() -> None:
             print(f"  {r.team_ID:6s} {r.year_ID:4d}  {r.rows:4d}  {r.leagues}")
 
     print("\n--- Roster-overlap verification ---")
-    checked, blocking, deferred_overlap = verify_roster_overlap(
-        mapping, bat, pitch, appearances, people, active_franchises
-    )
-    print(f"Checked {checked:,} mapped team-years with WAR-file data.")
+    results = compute_roster_overlap(mapping, bat, pitch, appearances, people)
+    blocking, deferred_overlap = partition_failures(results, active_franchises)
+    print(f"Checked {len(results):,} mapped team-years with WAR-file data.")
 
     if deferred_overlap:
         print(f"\nDEFERRED - {len(deferred_overlap)} non-active-franchise team-year(s) below threshold (not gate-blocking):\n")
@@ -231,8 +275,11 @@ def main() -> None:
     print(f"All active-franchise team-years passed roster-overlap verification "
           f"({len(deferred_overlap)} deferred non-active-franchise team-year(s) noted above).")
 
+    print("\n--- Human-readable mapping summary (30 active franchises) ---\n")
+    print(build_mapping_summary(mapping, results, teams_franchises, active_franchises))
+
     mapping.to_csv(OUT_PATH, index=False)
-    print(f"\nWrote {OUT_PATH} ({len(mapping):,} rows) for slice 3.3 to consume.")
+    print(f"Wrote {OUT_PATH} ({len(mapping):,} rows) for slice 3.3 to consume.")
 
 
 if __name__ == "__main__":
