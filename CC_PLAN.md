@@ -119,7 +119,7 @@ Reported missing by users: **Robin Yount (Brewers), Nick Kurtz (Athletics), Fran
 ### Slices
 
 - [x] **3.1 Scaffold + intake.** `pipeline_v2/` structure, raw-file loaders (including the new `Batting.csv`/`Pitching.csv` stat sources), Gate 1 intake counts + schema assertions.
-- [ ] **3.2 Team mapping table.** Year-aware mapping from `teamIDBR`, roster-overlap verification, exceptions for unmapped (code, year).
+- [x] **3.2 Team mapping table.** Year-aware mapping from `teamIDBR`, roster-overlap verification, exceptions for unmapped (code, year).
 - [ ] **3.3 ID resolution + WAR ingestion.** bbrefID spine, exceptions table with reason codes, Lahman-lag retention with BR names. Also joins `Batting.csv`/`Pitching.csv` counting stats onto the same rows, subject to the same gates (see Ingestion rules).
 - [ ] **3.4 Names + suffixes.** Three-tier suffix system, `overrides.csv`, staleness check, display-name assembly.
 - [ ] **3.5 Canonical assembly + gates.** Full Parquet emit with Gates 2–3 enforced; first reconciliation report + audit workbook.
