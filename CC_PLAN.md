@@ -115,6 +115,7 @@ Reported missing by users: **Robin Yount (Brewers), Nick Kurtz (Athletics), Fran
 - Output **auto-copies** into `app/public/` — the manual copy step is eliminated.
 - Expected size ≈ 3 MB gzipped (~110K rows). Acceptable; do not build lazy-loading/splitting now.
 - The generator emits **NO stat columns** to `game-data.json` yet — multi-metric gameplay is a future, design-gated feature. Emitting stats later must require only config changes.
+- **Display-name override, Angels franchise (ANA):** Lahman's `Teams.csv` lists this franchise's name as "Los Angeles Angels of Anaheim" all the way through its latest (2025) row — confirmed by inspection, not just stale data lag. The UI-facing franchise name should show as **"Los Angeles Angels"** instead. This is a view-layer display override only — canonical/intermediate data (franchID, era-accurate historical team names, etc.) stays exactly as Lahman has it. Add an explicit override in `view_config.yaml`'s franchise mapping (franchID ANA → display name "Los Angeles Angels"), not a change to any upstream source or canonical column.
 
 ### Slices
 
