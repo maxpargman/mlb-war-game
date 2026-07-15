@@ -254,7 +254,8 @@ def main() -> None:
     DATA_OUT.write_text(json.dumps(records, separators=(",", ":")), encoding="utf-8")
     APP_PUBLIC_OUT.write_text(json.dumps(records, separators=(",", ":")), encoding="utf-8")
     stamp_path = DATA_OUT.parent / "game-data.buildstamp.json"
-    stamp_path.write_text(json.dumps({"buildStamp": stamp, "canonicalPath": str(CANONICAL_PATH), "rowCount": len(records)}, indent=2), encoding="utf-8")
+    canonical_rel_path = CANONICAL_PATH.relative_to(REPO_ROOT).as_posix()
+    stamp_path.write_text(json.dumps({"buildStamp": stamp, "canonicalPath": canonical_rel_path, "rowCount": len(records)}, indent=2), encoding="utf-8")
 
     print(f"\nBuild stamp: {stamp}")
     print(f"Wrote {DATA_OUT}")
