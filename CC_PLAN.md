@@ -127,7 +127,7 @@ Reported missing by users: **Robin Yount (Brewers), Nick Kurtz (Athletics), Fran
 - [x] **3.6 Max's manual franchise audit.** Max reviews the workbook against Baseball-Reference (Brewers first: coverage 1969–present, Yount 1974–1993 present). Pipeline fixes iterate within this slice until Max signs off on all 30 franchises.
 - [x] **3.7 View generator.** Config-driven JSON emit, Gate 4, build stamp, auto-copy.
 - [x] **3.8 One-command refresh.** Single entry point (`make refresh` or `run_pipeline.py`): ingest → gates → Parquet → JSON → copy → report. Document the annual-update ritual in the repo.
-- [ ] **3.9 Data swap (gated).** Branch commit of the new `game-data.json`; Max verifies on the preview URL (search previously-reported players, dropdown behavior, spot checks) with the reconciliation report in hand; on sign-off, merge. Then archive-commit and delete the old pipeline scripts.
+- [x] **3.9 Data swap (gated).** Branch commit of the new `game-data.json`; Max verifies on the preview URL (search previously-reported players, dropdown behavior, spot checks) with the reconciliation report in hand; on sign-off, merge. Then archive-commit and delete the old pipeline scripts.
 
 ---
 
