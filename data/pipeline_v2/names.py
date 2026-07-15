@@ -83,8 +83,18 @@ def resolve_suffixes(register_suffixes: dict[str, str], overrides: pd.DataFrame)
 
 
 def assemble_display_name(first: str, last: str, suffix: str | None) -> str:
-    base = f"{first} {last}"
-    return f"{base} {suffix}" if suffix else base
+    # Both name parts and the suffix can arrive as float NaN (not None or
+    # ""), e.g. via a pandas map/apply on a missing value - Lahman genuinely
+    # has no recorded first name for ~300 very obscure 19th/early-20th-
+    # century players ("Adams", "Andrews", ...), and NaN is truthy in
+    # Python, so naive f-string/`if` handling stringifies it straight into
+    # the name ("nan Adams", "Bryce Harper nan"). pd.isna() guards both.
+    first = "" if pd.isna(first) else str(first)
+    last = "" if pd.isna(last) else str(last)
+    base = f"{first} {last}".strip()
+    if pd.isna(suffix) or not suffix:
+        return base
+    return f"{base} {suffix}"
 
 
 def main() -> None:

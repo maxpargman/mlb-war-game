@@ -12,6 +12,7 @@ data/war_positions.csv
 data/pipeline_v2/team_mapping.csv
 data/pipeline_v2/war_ingested.csv
 data/pipeline_v2/war_ingestion_exceptions.csv
+data/canonical/
 
 # plans
 Max_Plan.md
