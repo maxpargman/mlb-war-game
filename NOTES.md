@@ -22,12 +22,45 @@ npm run preview    # serve the last production build at http://localhost:4173
 npm run build      # production build → app/dist/
 ```
 
-## Data pipeline (Python, mlbwar conda env)
+## Data pipeline (Python, mlbwar conda env) — pipeline_v2
 
-Run these in order to regenerate all intermediate files and game-data.json:
+The pipeline was rebuilt from scratch starting CC_PLAN.md Phase 3 (canonical
+layer + gates, replacing the old build_*.py scripts below). Annual-update
+ritual: refresh the raw Lahman/Baseball-Reference/Chadwick files under
+`data/raw/`, then run the whole thing with one command:
 
 ```bash
 conda activate mlbwar
+python data/pipeline_v2/run_pipeline.py
+```
+
+This chains all 6 stages (intake → team mapping → WAR/stat ingestion →
+names/suffixes → canonical assembly + gates → view generation), stopping at
+the first failure. Produces fresh **local** files only:
+- `data/canonical/canonical.parquet` — the canonical dataset
+- `data/canonical/reconciliation_report.txt` — Gate 5 human-readable report
+- `data/canonical/franchise_audit.xlsx` — per-franchise manual-review workbook
+- `data/game-data.json` + `app/public/game-data.json` — the app's data file (auto-copied)
+
+None of this is committed automatically — review the reconciliation report
+and audit workbook, then decide whether to ship (commit `game-data.json` on
+a branch, verify on the preview URL, merge — see CC_PLAN.md slice 3.9).
+
+Each stage can also be run individually from `data/pipeline_v2/` if you only
+need to re-check one piece (`python data/pipeline_v2/intake.py`, etc.) — see
+each script's own docstring.
+
+**Known local-environment quirk:** if `data/canonical/franchise_audit.xlsx`
+is open in Excel, the pipeline's write to it fails with a `PermissionError`
+(look for a `~$franchise_audit.xlsx` lock file to confirm). Close the file
+and re-run.
+
+### Old pipeline (data/build_*.py) — being retired
+
+Still present but no longer the source of truth; slice 3.9 will archive and
+remove these once the new pipeline's output is verified and swapped in:
+
+```bash
 python data/build_positions.py       # positions.csv from Appearances.csv
 python data/build_war_table.py       # war_positions.csv (WAR joined onto positions)
 python data/build_franchise_map.py   # adds franchID + franchise_name, filters to 30 active franchises
