@@ -1,0 +1,35 @@
+# Slice 3.7 view generator config — every game-design choice that shapes
+# game-data.json from the canonical Parquet lives here. Changing gameplay
+# presentation (adding a DH slot, splitting OF into LF/CF/RF, renaming a
+# franchise) should only ever require editing this file, never
+# view_generator.py itself.
+
+# Treat LF/CF/RF as one combined "OF" position candidate rather than three
+# separate ones. The current 11-slot lineup (C,1B,2B,3B,SS,OF,OF,OF,P,P,P)
+# only has one OF slot type, so this should stay true unless the lineup
+# design changes.
+of_collapse: true
+
+# Players with WAR in both war files get a second position-version added
+# (the two-way case, e.g. Ohtani-P + Ohtani-OF) when a valid non-pitcher
+# defensive position exists for the batting side. See view_generator.py's
+# docstring for the exact derivation and why it's asymmetric (a position
+# player's incidental mop-up pitching never adds a P version).
+two_way_splitting: true
+
+# A season where every game was DH/pinch-hit/pinch-run (no games at any
+# real defensive position, including pitcher) has no valid position-version
+# to offer, since this game has no DH slot. Excluded, reason: dh_only_season.
+exclude_dh_only_seasons: true
+
+# Only currently-active franchises are offered in the game. Historical/
+# long-defunct franchises stay in the canonical layer (nothing is ever
+# deleted there) but are excluded here, reason: inactive_franchise.
+active_franchises_only: true
+
+# Franchise display-name overrides, applied over the canonical layer's
+# era-accurate name (which is otherwise just the most recent Teams.csv row
+# for that franchise). Only add an entry when Lahman's own most-recent name
+# doesn't match the franchise's real current public branding.
+franchise_name_overrides:
+  ANA: "Los Angeles Angels" # Lahman's Teams.csv still says "...of Anaheim" through its 2025 row; real branding dropped it in 2016.
