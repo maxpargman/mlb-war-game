@@ -22,12 +22,17 @@ npm run preview    # serve the last production build at http://localhost:4173
 npm run build      # production build → app/dist/
 ```
 
-## Data pipeline (Python, mlbwar conda env) — pipeline_v2
+## Data pipeline (Python, mlbwar conda env)
 
-The pipeline was rebuilt from scratch starting CC_PLAN.md Phase 3 (canonical
-layer + gates, replacing the old build_*.py scripts below). Annual-update
-ritual: refresh the raw Lahman/Baseball-Reference/Chadwick files under
-`data/raw/`, then run the whole thing with one command:
+The pipeline was rebuilt from scratch in CC_PLAN.md Phase 3 (canonical layer
++ gates). The old `data/build_*.py` scripts (positions → WAR table →
+franchise map → game data → validate) were retired and removed in slice 3.9
+once the new pipeline's output was verified and swapped in as the live
+`game-data.json`; their history is preserved in git (see commits from
+Phase 3, and the removal commit itself) if ever needed for reference.
+
+Annual-update ritual: refresh the raw Lahman/Baseball-Reference/Chadwick
+files under `data/raw/`, then run the whole thing with one command:
 
 ```bash
 conda activate mlbwar
@@ -54,19 +59,6 @@ each script's own docstring.
 is open in Excel, the pipeline's write to it fails with a `PermissionError`
 (look for a `~$franchise_audit.xlsx` lock file to confirm). Close the file
 and re-run.
-
-### Old pipeline (data/build_*.py) — being retired
-
-Still present but no longer the source of truth; slice 3.9 will archive and
-remove these once the new pipeline's output is verified and swapped in:
-
-```bash
-python data/build_positions.py       # positions.csv from Appearances.csv
-python data/build_war_table.py       # war_positions.csv (WAR joined onto positions)
-python data/build_franchise_map.py   # adds franchID + franchise_name, filters to 30 active franchises
-python data/build_game_data.py       # emits data/game-data.json (also copies to app/public/)
-python data/validate_game_data.py    # acceptance tests — all 11 must pass
-```
 
 Raw files live in `data/raw/` (git-ignored, not redistributable).
 
@@ -113,7 +105,12 @@ Hard mode should offer two settings after selecting it on the setup screen:
 Each round, a random start year is drawn within the outer window such that
 [start, start + window] stays inside it. Both team and year range are randomized per round.
 
-## Fixed: players silently missing from the dataset
+## Fixed: players silently missing from the dataset (historical, pipeline v1)
+
+*This section describes bugs in the old, now-removed `build_*.py` pipeline.
+Pipeline v2 (see "Data pipeline" above) has its own, more robust handling of
+these exact issues — see `data/pipeline_v2/id_crosswalk.py` and
+`team_mapping.py`'s docstrings. Kept here for historical context.*
 
 `build_war_table.py` joined the Baseball-Reference WAR files onto Lahman's `Appearances.csv`/
 `People.csv` assuming the two files used identical player IDs. They don't, always:
@@ -136,8 +133,9 @@ the historical remap for years before 2025.
 
 **Known residual gap:** ~130 players (2026 rookies/prospects) have zero Lahman record at all —
 Lahman's `People.csv` snapshot hasn't caught up to the current season. No local fix; resolves
-itself whenever Lahman cuts a new release. Re-run the full pipeline (`build_positions.py` →
-`build_war_table.py` → `build_game_data.py`) after refreshing the raw Lahman files to pick up
+itself whenever Lahman cuts a new release (pipeline v2 keeps these players anyway, tagged
+`lahman_lag` and named from the WAR file directly — see `war_ingestion.py`). Re-run
+`python data/pipeline_v2/run_pipeline.py` after refreshing the raw Lahman files to pick up
 newly-added players.
 
 ## Deferred UI tweaks
