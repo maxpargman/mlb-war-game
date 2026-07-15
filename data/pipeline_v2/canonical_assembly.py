@@ -32,6 +32,13 @@ only, per CC_PLAN.md's fail/warn split — roster counts can legitimately
 vary (strike seasons, expansion-team debut years) without indicating a
 real defect.
 
+Added post-signoff, found during slice 3.7 testing: correct_appearances_gaps()
+cross-checks G_p against Pitching.csv when Appearances.csv says 0, fixing
+Ohtani's 2022 season (28 real starts per Pitching.csv, but Appearances.csv
+had G_p=0 and G_of=0 -- an internal Lahman inconsistency that silently
+dropped his entire 6.25-WAR pitching season as a false "DH-only" exclusion
+in the view layer). Verified narrow: affects exactly 2 of 125,303 rows.
+
 Run with the mlbwar env active, from the repo root:
     python data/pipeline_v2/canonical_assembly.py
 """
@@ -62,17 +69,41 @@ ROSTER_SIZE_BOUNDS_PRE_1900 = (10, 70)
 PRE_1900_CUTOFF = 1900
 
 
+def correct_appearances_gaps(canonical: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Lahman's Appearances.csv and Pitching.csv occasionally disagree about
+    whether a player pitched in a given season. Found via slice 3.7
+    testing: Ohtani's 2022 season (28 real starts, 15-9, 6.25 pitchingWAR
+    per Pitching.csv) has G_p=0 AND G_of=0 in Appearances.csv -- an
+    internal Lahman inconsistency, not a bug in this pipeline -- which
+    misclassified an MVP-caliber pitching season as a DH-only season and
+    silently dropped it entirely from the view layer.
+
+    When Pitching.csv shows real games pitched (pitch_G > 0) but
+    Appearances.csv's G_p is 0, trust Pitching.csv and correct G_p.
+    Verified narrow: this affects exactly 2 rows in the full 125K-row
+    dataset (Ohtani 2022, plus one 1872 mop-up appearance with negligible
+    WAR) -- not a systemic disagreement between the two sources, so this
+    targeted correction doesn't risk misclassifying anyone else."""
+    canonical = canonical.copy()
+    gap_mask = (canonical["pitch_G"].fillna(0) > 0) & (canonical["G_p"].fillna(0) == 0)
+    corrections = canonical.loc[gap_mask, ["bbrefID", "year", "franchID", "G_p", "pitch_G"]].copy()
+    corrections = corrections.rename(columns={"G_p": "G_p_original"})
+    canonical.loc[gap_mask, "G_p"] = canonical.loc[gap_mask, "pitch_G"]
+    return canonical, corrections
+
+
 def build_canonical(
     teams, teams_franchises, people, appearances, batting, pitching, bat, pitch, register, overrides
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
-    """Returns (canonical, team_excluded, mapping, gate1_inputs) where
-    gate1_inputs carries the raw WAR-grain row count for the conservation
-    check."""
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
+    """Returns (canonical, team_excluded, mapping, gate1_inputs, appearances_corrections)
+    where gate1_inputs carries the raw WAR-grain row count for the
+    conservation check."""
     mapping = build_team_mapping(teams)
     grain = build_war_grain(bat, pitch)
     resolved, team_excluded = resolve_teams(grain, mapping)
     resolved = resolve_players(resolved, people)
     final = attach_stats(resolved, batting, pitching, appearances)
+    final, appearances_corrections = correct_appearances_gaps(final)
 
     register_suffixes, _rejected = load_register_suffixes(register)
     suffix_map, _stale = resolve_suffixes(register_suffixes, overrides)
@@ -81,7 +112,7 @@ def build_canonical(
         lambda r: assemble_display_name(r["nameFirst"], r["nameLast"], r["suffix"]), axis=1
     )
 
-    return final, team_excluded, mapping, {"rows_in": len(grain)}
+    return final, team_excluded, mapping, {"rows_in": len(grain)}, appearances_corrections
 
 
 def gate2_conservation(canonical: pd.DataFrame, team_excluded: pd.DataFrame, rows_in: int) -> tuple[bool, str]:
@@ -169,7 +200,9 @@ def compute_and_partition_overlap(mapping, bat, pitch, appearances, people, acti
     return len(results), blocking, deferred
 
 
-def write_reconciliation_report(report: dict, canonical: pd.DataFrame, team_excluded: pd.DataFrame, rows_in: int) -> str:
+def write_reconciliation_report(
+    report: dict, canonical: pd.DataFrame, team_excluded: pd.DataFrame, rows_in: int, appearances_corrections: pd.DataFrame
+) -> str:
     lines = []
     lines.append("=" * 78)
     lines.append("CANONICAL BUILD RECONCILIATION REPORT")
@@ -191,6 +224,11 @@ def write_reconciliation_report(report: dict, canonical: pd.DataFrame, team_excl
     lines.append("\n--- Player ID resolution ---")
     for reason, count in canonical["resolutionReason"].value_counts().items():
         lines.append(f"  {reason:20s} {count:6,d}")
+
+    lines.append("\n--- Appearances.csv / Pitching.csv cross-check corrections ---")
+    lines.append(f"  G_p corrected (Appearances said 0, Pitching.csv showed real starts): {len(appearances_corrections)}")
+    for row in appearances_corrections.itertuples(index=False):
+        lines.append(f"      {row.bbrefID} {row.year} {row.franchID}: G_p {row.G_p_original:.0f} -> {row.pitch_G:.0f}")
 
     lines.append("\n--- Gate 2: conservation ---")
     lines.append(f"  {'PASS' if report['gate2']['ok'] else 'FAIL'}  {report['gate2']['message']}")
@@ -291,14 +329,15 @@ def main() -> None:
     register = load_chadwick_register()
     overrides = load_overrides()
 
-    canonical, team_excluded, mapping, gate1 = build_canonical(
+    canonical, team_excluded, mapping, gate1, appearances_corrections = build_canonical(
         teams, teams_franchises, people, appearances, batting, pitching, bat, pitch, register, overrides
     )
     print(f"\nCanonical rows: {len(canonical):,}   Excluded: {len(team_excluded):,}")
+    print(f"Appearances/Pitching G_p corrections applied: {len(appearances_corrections):,}")
 
     report = run_gates(canonical, team_excluded, teams, teams_franchises, mapping, bat, pitch, appearances, people, gate1["rows_in"])
 
-    report_text = write_reconciliation_report(report, canonical, team_excluded, gate1["rows_in"])
+    report_text = write_reconciliation_report(report, canonical, team_excluded, gate1["rows_in"], appearances_corrections)
     print("\n" + report_text)
 
     if not report["overall_ok"]:
