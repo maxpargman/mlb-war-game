@@ -6,6 +6,7 @@ import { generateDailySchedule, todayString, type DailyRound, type DailyMode } f
 import type { GameState, DraftPick, LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
+import { useSessionTracking } from './useSessionTracking'
 
 interface Props {
   mode: DailyMode
@@ -76,6 +77,11 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
       onDone(score, lineup)
     }
   }, [state?.phase])
+
+  // Slice 4.2: logs this session (create on first pick, update per pick,
+  // complete on finish) independent of the optional named leaderboard
+  // submission, which only happens later in LeaderboardScreen.
+  useSessionTracking('daily', mode, todayString(), state ? [state.lineups[0]] : [], state?.phase ?? 'draft')
 
   if (!state || state.phase === 'done') return null
 

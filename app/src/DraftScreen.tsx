@@ -5,6 +5,8 @@ import { initGame, applyPick, hasDraftablePlayer } from './engine'
 import type { GameSettings, GameState, DraftPick } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
+import { useSessionTracking } from './useSessionTracking'
+import { todayString } from './daily'
 
 interface Props {
   settings: GameSettings
@@ -41,6 +43,10 @@ export default function DraftScreen({ settings, onEnd }: Props) {
   useEffect(() => {
     if (state.phase === 'done') onEnd(state)
   }, [state.phase])
+
+  // Slice 4.2: logs this session (create on first pick, update per pick,
+  // complete on finish) -- hot-seat games are analytics only, no leaderboard.
+  useSessionTracking('hotseat', settings.mode, todayString(), state.lineups, state.phase)
 
   const { round, turn } = state
   if (state.phase === 'done') return null
