@@ -12,6 +12,9 @@ data/pipeline_v2/war_ingested.csv
 data/pipeline_v2/war_ingestion_exceptions.csv
 data/canonical/
 
+# Supabase CLI local cache
+supabase/.temp/
+
 # plans
 Max_Plan.md
 CC_Plan.md
