@@ -15,9 +15,18 @@ export interface DailyScore {
   created_at?: string
 }
 
+// Slice 4.1: writes no longer go directly to the table (RLS rejects them
+// now). The submit-score Edge Function recomputes the score server-side
+// from the lineup and only inserts if it's legitimate.
 export async function submitScore(entry: Omit<DailyScore, 'id' | 'created_at'>): Promise<void> {
-  const { error } = await supabase.from('daily_scores').insert(entry)
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.functions.invoke('submit-score', { body: entry })
+  if (error) {
+    // FunctionsHttpError carries the function's JSON error body on .context
+    const context = (error as { context?: Response }).context
+    const message = context ? ((await context.json().catch(() => null))?.error ?? error.message) : error.message
+    throw new Error(message)
+  }
+  if (data?.error) throw new Error(data.error)
 }
 
 export async function fetchLeaderboard(date: string, mode: 'easy' | 'medium' | 'hard'): Promise<DailyScore[]> {
