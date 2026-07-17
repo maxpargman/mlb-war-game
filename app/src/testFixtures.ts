@@ -9,6 +9,11 @@ export const fixtureDb: Season[] = [
   // eligiblePlayers picks the best-WAR season within the active year range.
   { id: 'p02', n: 'Player Two', fid: 'F01', fn: 'Team 01', y: 2000, pos: '1B', war: 3.0 },
   { id: 'p02', n: 'Player Two', fid: 'F01', fn: 'Team 01', y: 2005, pos: '1B', war: 5.0 },
+  // p02 also has two more low-WAR seasons (2001, 2002) making 2000-2002 a
+  // consecutive run with a gap before 2005 -- used to test gap-aware year
+  // formatting ("2000-2002, 2005"). Low WAR so they never win "best season".
+  { id: 'p02', n: 'Player Two', fid: 'F01', fn: 'Team 01', y: 2001, pos: '1B', war: 1.0 },
+  { id: 'p02', n: 'Player Two', fid: 'F01', fn: 'Team 01', y: 2002, pos: '1B', war: 1.0 },
   { id: 'p03', n: 'Player Three', fid: 'F01', fn: 'Team 01', y: 2000, pos: '2B', war: 1.5 },
   { id: 'p04', n: 'Player Four', fid: 'F01', fn: 'Team 01', y: 2000, pos: '3B', war: 1.0 },
   { id: 'p05', n: 'Player Five', fid: 'F01', fn: 'Team 01', y: 2000, pos: 'SS', war: 4.0 },

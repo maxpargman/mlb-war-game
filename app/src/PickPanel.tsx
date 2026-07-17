@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, type CSSProperties } from 'react'
 import './layout.css'
 import type { PlayerVersion } from './data'
-import { eligiblePlayers } from './data'
+import { eligiblePlayers, stintYears, formatYearRanges } from './data'
 import { openSlotsFor } from './engine'
 import type { GameState, DraftPick, LineupSlot } from './types'
 
@@ -83,7 +83,12 @@ export default function PickPanel({ state, onPick }: Props) {
         <div className="pick-results" style={styles.results}>
           <ul className="pick-list" style={styles.list}>
             {filtered.map(p => (
-              <PlayerRow key={`${p.id}|${p.pos}`} player={p} onPick={handlePick} />
+              <PlayerRow
+                key={`${p.id}|${p.pos}`}
+                player={p}
+                years={formatYearRanges(stintYears(p.id, p.pos, fid, yearLo, yearHi))}
+                onPick={handlePick}
+              />
             ))}
           </ul>
         </div>
@@ -92,7 +97,7 @@ export default function PickPanel({ state, onPick }: Props) {
   )
 }
 
-function PlayerRow({ player: p, onPick }: { player: PlayerVersion; onPick: (p: PlayerVersion) => void }) {
+function PlayerRow({ player: p, years, onPick }: { player: PlayerVersion; years: string; onPick: (p: PlayerVersion) => void }) {
   const rowStyle: CSSProperties = styles.row
   return (
     <li
@@ -102,6 +107,7 @@ function PlayerRow({ player: p, onPick }: { player: PlayerVersion; onPick: (p: P
     >
       <span style={styles.pos}>{p.pos}</span>
       <span style={styles.name}>{p.name}</span>
+      {years && <span style={styles.years}>{years}</span>}
     </li>
   )
 }
@@ -152,9 +158,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   name: {
     flex: 1,
+    minWidth: 0,
     color: '#f1f5f9',
     fontWeight: 600,
     fontSize: '0.9rem',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  years: {
+    flexShrink: 0,
+    color: '#64748b',
+    fontSize: '0.75rem',
+    whiteSpace: 'nowrap',
   },
   war: {
     color: '#34d399',
