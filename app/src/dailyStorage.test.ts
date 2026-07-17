@@ -32,6 +32,7 @@ function makeState(phase: 'draft' | 'done', takenIds: string[] = []): GameState 
     round: phase === 'done' ? 11 : 3,
     turn: 0,
     phase,
+    skipUsed: false,
   }
 }
 

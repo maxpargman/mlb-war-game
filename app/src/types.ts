@@ -34,6 +34,7 @@ export interface GameState {
   round: number        // 0-based current round (0–10)
   turn: 0 | 1         // which player is picking this half-round
   phase: 'draft' | 'done'
+  skipUsed: boolean    // daily-only (5.3): one free franchise skip per game; unused by hot-seat
 }
 
 // Snake order: round 0 → [0,1], round 1 → [1,0], round 2 → [0,1], …

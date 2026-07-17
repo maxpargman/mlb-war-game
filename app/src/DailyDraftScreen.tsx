@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { franchises } from './data'
 import { hasDraftablePlayer } from './engine'
 import { emptyLineup } from './types'
-import { generateDailySchedule, todayString, type DailyRound, type DailyMode } from './daily'
+import { generateDailySchedule, generateSkipBackups, todayString, type DailyRound, type DailyMode } from './daily'
 import type { GameState, DraftPick, LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
@@ -24,7 +24,24 @@ function buildDailyState(rounds: DailyRound[]): GameState {
     round: 0,
     turn: 0,
     phase: 'draft',
+    skipUsed: false,
   }
+}
+
+// Replaces the current round's franchise + year window with the
+// pre-generated deterministic backup for that round index -- derived from
+// the ORIGINAL primary schedule (not live state), so it's identical for
+// every player who skips round N on this (date, mode), regardless of any
+// dead-end reroll that may have already touched other rounds.
+function applySkip(state: GameState, backups: DailyRound[]): GameState {
+  if (state.skipUsed || state.phase !== 'draft') return state
+  const backup = backups[state.round]
+  if (!backup) return state
+  const roundFranchises = [...state.roundFranchises]
+  roundFranchises[state.round] = { fid: backup.fid, fn: backup.fn }
+  const roundRanges = [...state.roundRanges]
+  roundRanges[state.round] = { yearLo: backup.yearLo, yearHi: backup.yearHi }
+  return { ...state, roundFranchises, roundRanges, skipUsed: true }
 }
 
 function rerollFranchise(state: GameState): GameState {
@@ -65,6 +82,16 @@ function advanceSinglePlayer(state: GameState, pick: DraftPick, slotIndex: numbe
 
 export default function DailyDraftScreen({ mode, onDone }: Props) {
   const [state, setState] = useState<GameState | null>(null)
+
+  // Skip (5.3, Medium/Hard only): a deterministic backup per round index,
+  // derived from the primary schedule -- pure function of (date, mode), so
+  // it's identical whether starting fresh or resuming, and unaffected by
+  // any skip/reroll already applied to live state.
+  const backups = useMemo(() => {
+    if (mode === 'easy') return []
+    const date = todayString()
+    return generateSkipBackups(date, mode, generateDailySchedule(date, mode))
+  }, [mode])
 
   // Lock-on-start with resume: a stored state for today's (date, mode) is
   // resumed as-is (already fully resolved -- no need to re-run resolveState,
@@ -109,6 +136,12 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
     setState(s => s ? resolveState(advanceSinglePlayer(s, pick, slotIndex)) : s)
   }
 
+  function handleSkip() {
+    setState(s => s ? resolveState(applySkip(s, backups)) : s)
+  }
+
+  const canSkip = mode !== 'easy' && !state.skipUsed
+
   // Adapt state for PickPanel (which reads state.turn and state.lineups[turn])
   const panelState = { ...state, turn: 0 as const }
 
@@ -124,9 +157,20 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
             {yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}
           </span>
         </div>
-        <span className="top-bar-right" style={styles.meta}>
-          {mode.charAt(0).toUpperCase() + mode.slice(1)} · {todayString()}
-        </span>
+        <div className="top-bar-right" style={styles.rightGroup}>
+          <span style={styles.meta}>
+            {mode.charAt(0).toUpperCase() + mode.slice(1)} · {todayString()}
+          </span>
+          {mode !== 'easy' && (
+            <button
+              onClick={handleSkip}
+              disabled={!canSkip}
+              style={{ ...styles.skipBtn, ...(canSkip ? {} : styles.skipBtnDisabled) }}
+            >
+              {state.skipUsed ? 'Skip used' : '⟳ Skip franchise'}
+            </button>
+          )}
+        </div>
       </div>
 
       <PickPanel state={panelState} onPick={handlePick} />
@@ -159,4 +203,16 @@ const styles: Record<string, React.CSSProperties> = {
   franchiseChip: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem' },
   franchiseName: { fontWeight: 800, fontSize: '1.4rem' },
   yearRange: { color: '#94a3b8', fontSize: '0.8rem' },
+  rightGroup: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  skipBtn: {
+    padding: '0.3rem 0.75rem',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    background: 'transparent',
+    color: '#93c5fd',
+    cursor: 'pointer',
+  },
+  skipBtnDisabled: { color: '#475569', cursor: 'default' },
 }

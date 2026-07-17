@@ -51,6 +51,7 @@ export function initGame(settings: GameSettings): GameState {
     round: 0,
     turn: snakeOrder(0)[0],
     phase: 'draft',
+    skipUsed: false,
   }
 }
 

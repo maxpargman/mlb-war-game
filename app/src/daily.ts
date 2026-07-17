@@ -72,3 +72,44 @@ export function generateDailySchedule(date: string, mode: DailyMode): DailyRound
 
   return rounds
 }
+
+// Slice 5.3: a deterministic backup franchise/year-window per round index,
+// for the daily challenge's skip feature (Medium/Hard only). Seeded
+// independently of the primary schedule (own offset) so it doesn't disturb
+// it, and drawn from a pool excluding every primary-schedule franchise so a
+// skip can never reintroduce a repeat. Pure function of (date, mode,
+// schedule) — every player skipping round N on the same day lands on the
+// identical replacement. KEPT IN SYNC with the copy in
+// supabase/functions/submit-score/index.ts, which needs it to validate a
+// skip-affected submission.
+const SKIP_SEED_OFFSET = 100
+
+export function generateSkipBackups(date: string, mode: DailyMode, schedule: DailyRound[]): DailyRound[] {
+  const rand = mulberry32(dateToSeed(date) + SKIP_SEED_OFFSET + MODE_OFFSET[mode])
+  const { min, max } = yearBounds()
+  const usedFids = new Set(schedule.map(r => r.fid))
+  const pool = franchises().filter(f => !usedFids.has(f.fid))
+  const backups: DailyRound[] = []
+
+  for (let i = 0; i < schedule.length && pool.length > 0; i++) {
+    const idx = Math.floor(rand() * pool.length)
+    const { fid, fn } = pool.splice(idx, 1)[0]
+
+    let yearLo: number
+    let yearHi: number
+
+    if (mode === 'easy') {
+      yearLo = min
+      yearHi = max
+    } else {
+      const windowSize = mode === 'medium' ? 10 : 5
+      const span = max - ERA_START - windowSize
+      yearLo = ERA_START + Math.floor(rand() * span)
+      yearHi = yearLo + windowSize
+    }
+
+    backups.push({ fid, fn, yearLo, yearHi })
+  }
+
+  return backups
+}

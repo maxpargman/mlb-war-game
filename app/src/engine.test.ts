@@ -30,6 +30,7 @@ function baseState(): GameState {
     round: 0,
     turn: 0,
     phase: 'draft',
+    skipUsed: false,
   }
 }
 

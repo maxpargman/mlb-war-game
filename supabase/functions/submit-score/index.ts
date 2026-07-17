@@ -20,7 +20,9 @@
 //      app/src/daily.ts's generateDailySchedule. Every pick's franchise,
 //      year, and position get checked against that schedule, and its WAR
 //      value is looked up fresh from game-data.json (never trusts the
-//      client's submitted WAR or total score).
+//      client's submitted WAR or total score). A pick may instead match the
+//      deterministic skip-backup for its round (slice 5.3, Medium/Hard
+//      only) — at most one such substitution is accepted per submission.
 //   5. One submission per (date, username, mode) — checked here for a fast
 //      rejection, and enforced for real by a unique constraint in the DB
 //      (this check alone can't close a race between two near-simultaneous
@@ -119,6 +121,37 @@ function generateDailySchedule(date: string, mode: string, gameData: Season[]): 
   return rounds
 }
 
+// Slice 5.3 skip feature -- ported from app/src/daily.ts's
+// generateSkipBackups -- KEEP IN SYNC.
+const SKIP_SEED_OFFSET = 100
+
+function generateSkipBackups(date: string, mode: string, schedule: DailyRound[], gameData: Season[]): DailyRound[] {
+  const rand = mulberry32(dateToSeed(date) + SKIP_SEED_OFFSET + (MODE_OFFSET[mode] ?? 0))
+  const { min, max } = yearBounds(gameData)
+  const usedFids = new Set(schedule.map(r => r.fid))
+  const pool = franchises(gameData).filter(f => !usedFids.has(f.fid))
+  const backups: DailyRound[] = []
+
+  for (let i = 0; i < schedule.length && pool.length > 0; i++) {
+    const idx = Math.floor(rand() * pool.length)
+    const { fid, fn } = pool.splice(idx, 1)[0]
+
+    let yearLo: number
+    let yearHi: number
+    if (mode === 'easy') {
+      yearLo = min
+      yearHi = max
+    } else {
+      const windowSize = mode === 'medium' ? 10 : 5
+      const span = max - ERA_START - windowSize
+      yearLo = ERA_START + Math.floor(rand() * span)
+      yearHi = yearLo + windowSize
+    }
+    backups.push({ fid, fn, yearLo, yearHi })
+  }
+  return backups
+}
+
 // --- end ported section ---
 
 function eligibleWar(gameData: Season[], fid: string, pos: string, yearLo: number, yearHi: number, playerId: string): { war: number; year: number } | null {
@@ -158,14 +191,16 @@ function sanitizeUsername(raw: unknown): string {
 
 class ValidationError extends Error {}
 
-function validateAndScore(lineup: unknown, schedule: DailyRound[], gameData: Season[]): number {
+function validateAndScore(lineup: unknown, schedule: DailyRound[], backups: DailyRound[], gameData: Season[]): number {
   if (!Array.isArray(lineup) || lineup.length !== LINEUP_TEMPLATE.length) {
     throw new ValidationError('Lineup must have exactly 11 slots.')
   }
 
   const roundsByFid = new Map(schedule.map(r => [r.fid, r]))
+  const backupsByFid = new Map(backups.map(r => [r.fid, r]))
   const usedFids = new Set<string>()
   const usedPlayerIds = new Set<string>()
+  let skipCount = 0
   let total = 0
 
   for (let i = 0; i < LINEUP_TEMPLATE.length; i++) {
@@ -179,8 +214,19 @@ function validateAndScore(lineup: unknown, schedule: DailyRound[], gameData: Sea
     if (usedPlayerIds.has(pick.playerId)) throw new ValidationError(`Player ${pick.playerId} drafted more than once.`)
     usedPlayerIds.add(pick.playerId)
 
-    const round = roundsByFid.get(pick.fid)
-    if (!round) throw new ValidationError(`Franchise ${pick.fid} was not in today's schedule.`)
+    // A pick's franchise must be either a scheduled franchise, or (at most
+    // once per submission) the deterministic skip-backup for some round --
+    // it doesn't matter which round, since the backup pool already
+    // excludes every scheduled franchise (slice 5.3).
+    let round = roundsByFid.get(pick.fid)
+    if (!round) {
+      round = backupsByFid.get(pick.fid)
+      if (round) {
+        skipCount++
+        if (skipCount > 1) throw new ValidationError('Only one skip is allowed per game.')
+      }
+    }
+    if (!round) throw new ValidationError(`Franchise ${pick.fid} was not in today's schedule or a valid skip.`)
     if (usedFids.has(pick.fid)) throw new ValidationError(`Franchise ${pick.fid} used more than once.`)
     usedFids.add(pick.fid)
 
@@ -242,7 +288,10 @@ Deno.serve(async req => {
 
     const gameData = await loadGameData()
     const schedule = generateDailySchedule(date, mode, gameData)
-    const score = validateAndScore(body.lineup, schedule, gameData)
+    // Skip is Medium/Hard only (slice 5.3) -- easy gets no valid backups,
+    // so any non-scheduled franchise there is rejected same as before.
+    const backups = mode === 'easy' ? [] : generateSkipBackups(date, mode, schedule, gameData)
+    const score = validateAndScore(body.lineup, schedule, backups, gameData)
 
     // Fast pre-check (not race-safe on its own -- the DB unique constraint
     // from this slice's migration is the real guarantee).
