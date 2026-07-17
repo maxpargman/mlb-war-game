@@ -217,13 +217,16 @@ Deno.serve(async req => {
   try {
     // Rate limit: log this attempt, then check how many this IP has made
     // in the window. Logged before validation so rejected/malformed
-    // requests count too.
-    await admin.from('submission_attempts').insert({ ip })
+    // requests count too. submission_attempts is shared with track-session
+    // (slice 4.2) -- must filter by endpoint or a single daily game's ~12
+    // track-session calls (one per pick) blow through this budget too.
+    await admin.from('submission_attempts').insert({ ip, endpoint: 'submit-score' })
     const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString()
     const { count } = await admin
       .from('submission_attempts')
       .select('id', { count: 'exact', head: true })
       .eq('ip', ip)
+      .eq('endpoint', 'submit-score')
       .gte('created_at', since)
     if ((count ?? 0) > RATE_LIMIT_MAX) {
       return new Response(JSON.stringify({ error: 'Too many submissions. Try again later.' }), { status: 429, headers: corsHeaders })
