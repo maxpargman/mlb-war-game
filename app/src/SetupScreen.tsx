@@ -1,13 +1,27 @@
 import { useState } from 'react'
 import { yearBounds } from './data'
 import type { GameSettings, TimeRangeMode } from './types'
-import type { DailyMode } from './daily'
+import { todayString, type DailyMode } from './daily'
+import { getDailyStatus, type DailyStatus } from './dailyStorage'
 
 export type GameMode = '2player' | 'daily-easy' | 'daily-medium' | 'daily-hard'
 
 interface Props {
   onStart: (settings: GameSettings) => void
   onDaily: (mode: DailyMode) => void
+}
+
+const DAILY_MODE_OF: Record<GameMode, DailyMode | null> = {
+  '2player': null,
+  'daily-easy': 'easy',
+  'daily-medium': 'medium',
+  'daily-hard': 'hard',
+}
+
+function statusText(status: DailyStatus, fallback: string): string {
+  if (status.kind === 'in_progress') return 'In progress — tap to resume'
+  if (status.kind === 'done') return `Completed — ${status.score.toFixed(1)} WAR`
+  return fallback
 }
 
 export default function SetupScreen({ onStart, onDaily }: Props) {
@@ -22,6 +36,23 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
   const loErr = rangeMode === 'custom' && yearLo > yearHi
   const rangeErr = rangeMode === 'custom' && (yearLo < min || yearLo > max || yearHi < min || yearHi > max)
   const canStart = !loErr && !rangeErr
+
+  // Statuses are read fresh on each render (cheap, synchronous localStorage
+  // reads) -- this component remounts whenever the player returns to setup.
+  const today = todayString()
+  const dailyStatus: Record<DailyMode, DailyStatus> = {
+    easy: getDailyStatus(today, 'easy'),
+    medium: getDailyStatus(today, 'medium'),
+    hard: getDailyStatus(today, 'hard'),
+  }
+
+  const selectedDailyMode = DAILY_MODE_OF[gameMode]
+  const selectedDailyStatus = selectedDailyMode ? dailyStatus[selectedDailyMode] : null
+  const startLabel = selectedDailyStatus?.kind === 'in_progress'
+    ? 'Resume Daily Challenge'
+    : selectedDailyStatus?.kind === 'done'
+      ? 'View Results'
+      : gameMode === '2player' ? 'Start Draft' : 'Start Daily Challenge'
 
   function handleStart() {
     if (gameMode === 'daily-easy') { onDaily('easy'); return }
@@ -47,19 +78,19 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
         <label style={styles.radio}>
           <input type="radio" name="gameMode" checked={gameMode === 'daily-easy'} onChange={() => setGameMode('daily-easy')} />
           <span style={styles.radioTitle}>Daily — Easy</span>
-          <span style={styles.desc}>Today's challenge, all time</span>
+          <span style={styles.desc}>{statusText(dailyStatus.easy, "Today's challenge, all time")}</span>
         </label>
 
         <label style={styles.radio}>
           <input type="radio" name="gameMode" checked={gameMode === 'daily-medium'} onChange={() => setGameMode('daily-medium')} />
           <span style={styles.radioTitle}>Daily — Medium</span>
-          <span style={styles.desc}>Post-1970, random 10-year windows</span>
+          <span style={styles.desc}>{statusText(dailyStatus.medium, 'Post-1970, random 10-year windows')}</span>
         </label>
 
         <label style={styles.radio}>
           <input type="radio" name="gameMode" checked={gameMode === 'daily-hard'} onChange={() => setGameMode('daily-hard')} />
           <span style={styles.radioTitle}>Daily — Hard</span>
-          <span style={styles.desc}>Post-1970, random 5-year windows</span>
+          <span style={styles.desc}>{statusText(dailyStatus.hard, 'Post-1970, random 5-year windows')}</span>
         </label>
       </div>
 
@@ -112,7 +143,7 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
       )}
 
       <button onClick={handleStart} disabled={!canStart} style={styles.startBtn}>
-        {gameMode === '2player' ? 'Start Draft' : 'Start Daily Challenge'}
+        {startLabel}
       </button>
     </div>
   )

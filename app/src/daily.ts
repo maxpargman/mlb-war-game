@@ -19,8 +19,18 @@ function dateToSeed(date: string): number {
 // Each mode gets a different seed offset so schedules don't overlap
 const MODE_OFFSET: Record<DailyMode, number> = { easy: 0, medium: 1, hard: 2 }
 
+// Single global day boundary for the daily challenge (schedule seed,
+// storage keys, lock/resume) — US Eastern midnight, DST-aware via the IANA
+// zone name rather than a fixed UTC offset.
 export function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const get = (type: string) => parts.find(p => p.type === type)!.value
+  return `${get('year')}-${get('month')}-${get('day')}`
 }
 
 export interface DailyRound {

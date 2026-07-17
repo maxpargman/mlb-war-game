@@ -1,10 +1,16 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { __setDbForTesting } from './data'
 import { fixtureDb } from './testFixtures'
-import { generateDailySchedule } from './daily'
+import { generateDailySchedule, todayString } from './daily'
 
 beforeAll(() => {
   __setDbForTesting(fixtureDb)
+})
+
+describe('todayString', () => {
+  it('returns a YYYY-MM-DD date string', () => {
+    expect(todayString()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
 })
 
 describe('generateDailySchedule', () => {

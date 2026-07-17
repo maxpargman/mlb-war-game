@@ -7,6 +7,7 @@ import type { GameState, DraftPick, LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
 import { useSessionTracking } from './useSessionTracking'
+import { loadDailyState, saveDailyState } from './dailyStorage'
 
 interface Props {
   mode: DailyMode
@@ -65,10 +66,24 @@ function advanceSinglePlayer(state: GameState, pick: DraftPick, slotIndex: numbe
 export default function DailyDraftScreen({ mode, onDone }: Props) {
   const [state, setState] = useState<GameState | null>(null)
 
+  // Lock-on-start with resume: a stored state for today's (date, mode) is
+  // resumed as-is (already fully resolved -- no need to re-run resolveState,
+  // which would risk a redundant reroll). No stored state starts fresh.
   useEffect(() => {
-    const rounds = generateDailySchedule(todayString(), mode)
+    const date = todayString()
+    const stored = loadDailyState(date, mode)
+    if (stored) { setState(stored); return }
+    const rounds = generateDailySchedule(date, mode)
     setState(resolveState(buildDailyState(rounds)))
   }, [mode])
+
+  // Persist after every change (including the final 'done' state) so a
+  // reload always resumes -- or, once finished, redisplays the result
+  // instead of starting a new game. Declared before the onDone effect below
+  // so a completed game is saved before this screen unmounts.
+  useEffect(() => {
+    if (state) saveDailyState(todayString(), mode, state)
+  }, [state, mode])
 
   useEffect(() => {
     if (state?.phase === 'done') {
