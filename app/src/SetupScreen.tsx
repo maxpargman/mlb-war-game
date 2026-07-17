@@ -3,6 +3,9 @@ import { yearBounds } from './data'
 import type { GameSettings, TimeRangeMode } from './types'
 import { todayString, type DailyMode } from './daily'
 import { getDailyStatus, type DailyStatus } from './dailyStorage'
+import InstructionsModal from './InstructionsModal'
+
+const INSTRUCTIONS_SEEN_KEY = 'mlbwar_instructions_seen'
 
 export type GameMode = '2player' | 'daily-easy' | 'daily-medium' | 'daily-hard'
 
@@ -32,6 +35,12 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
   const [rangeMode, setRangeMode] = useState<TimeRangeMode>('all')
   const [yearLo, setYearLo] = useState(2000)
   const [yearHi, setYearHi] = useState(max)
+  const [showInstructions, setShowInstructions] = useState(() => !localStorage.getItem(INSTRUCTIONS_SEEN_KEY))
+
+  function closeInstructions() {
+    localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1')
+    setShowInstructions(false)
+  }
 
   const loErr = rangeMode === 'custom' && yearLo > yearHi
   const rangeErr = rangeMode === 'custom' && (yearLo < min || yearLo > max || yearHi < min || yearHi > max)
@@ -63,6 +72,12 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
 
   return (
     <div style={styles.page}>
+      <button onClick={() => setShowInstructions(true)} style={styles.howToPlayBtn}>
+        ❓ How to play
+      </button>
+
+      {showInstructions && <InstructionsModal onClose={closeInstructions} />}
+
       <h1 style={styles.title}>The WAR Room</h1>
 
       {/* Game mode */}
@@ -167,6 +182,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 800,
     marginBottom: '1.5rem',
     letterSpacing: '-0.5px',
+  },
+  howToPlayBtn: {
+    position: 'fixed',
+    top: '0.75rem',
+    right: '0.75rem',
+    zIndex: 100,
+    background: '#1e293b',
+    border: '1px solid #334155',
+    color: '#94a3b8',
+    borderRadius: '8px',
+    padding: '0.35rem 0.75rem',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    cursor: 'pointer',
   },
   card: {
     background: '#1e293b',
