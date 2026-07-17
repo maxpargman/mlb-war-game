@@ -22,47 +22,43 @@ npm run preview    # serve the last production build at http://localhost:4173
 npm run build      # production build → app/dist/
 ```
 
-## Supabase (daily-challenge leaderboard)
+## Supabase (leaderboard + session tracking)
 
-Project holds one table, `daily_scores`, used by the daily-challenge
-leaderboard. Dashboard: https://supabase.com/dashboard/project/jqqoatzcfumimmboyspt
-(SQL Editor is in the left sidebar).
+Dashboard: https://supabase.com/dashboard/project/jqqoatzcfumimmboyspt
+(SQL Editor is in the left sidebar). Tables: `daily_scores` (public leaderboard,
+hardened in 4.1), `game_sessions` (anonymous per-game analytics, 4.2, never
+publicly readable), `submission_attempts` (rate limiting for both Edge
+Functions). CLI is set up and linked (`supabase link --project-ref
+jqqoatzcfumimmboyspt`) — `supabase db push` / `supabase functions deploy
+<name>` work directly from the repo root.
 
-**Slice 4.1 (leaderboard hardening) needs manual deployment** — this repo
-has no Supabase CLI set up yet and I don't have credentials to deploy from
-here, so these two steps need to happen on your side:
+Both `daily_scores` and `game_sessions` reject direct table writes (RLS).
+The only writers are their respective Edge Functions
+(`supabase/functions/submit-score`, `supabase/functions/track-session`),
+which validate/recompute server-side before inserting.
 
-1. **Run the migration.** Open the SQL Editor and run
-   `supabase/migrations/20260716120000_harden_daily_scores.sql`. This drops
-   the old permissive open-insert policy (direct table inserts will start
-   failing after this — that's intentional, see step 2), adds a unique
-   constraint so one username can't submit twice for the same (date, mode),
-   and adds a small `submission_attempts` table for rate limiting.
-
-2. **Deploy the Edge Function.** The function lives at
-   `supabase/functions/submit-score/index.ts`. Two ways to deploy it:
-   - **CLI** (recommended if you set it up): `npm install -g supabase`,
-     `supabase login`, `supabase link --project-ref jqqoatzcfumimmboyspt`,
-     then `supabase functions deploy submit-score` from the repo root.
-   - **Dashboard**: Edge Functions → Create a new function named
-     `submit-score` → paste the contents of `index.ts` into the editor →
-     Deploy. No extra secrets to configure — `SUPABASE_URL` and
-     `SUPABASE_SERVICE_ROLE_KEY` are auto-injected into every function in
-     the project.
-
-After both are deployed: direct inserts to `daily_scores` (e.g. via the
-Table Editor's insert UI, or the old REST insert the anon key used to be
-able to do) should fail with a permissions error; a real submission
-through the app should still work end-to-end; reads are unaffected either
-way.
-
-**If the function's validation logic and `app/src/daily.ts` ever drift**
+**If `submit-score`'s validation logic and `app/src/daily.ts` ever drift**
 (e.g. someone changes the daily-schedule algorithm in one place and
 forgets the other), every legitimate submission will start getting
 rejected — the mulberry32/schedule-generation code is duplicated between
 `app/src/daily.ts` and `supabase/functions/submit-score/index.ts` because
 they run in different runtimes (Vite/browser vs. Deno) and can't share a
 module. Both files have a "KEEP IN SYNC" comment at the relevant spot.
+
+**Slice 4.3 (keep-alive + stale-session cleanup) needs two GitHub repo
+secrets** to activate the workflow at `.github/workflows/keepalive.yml`
+(Settings → Secrets and variables → Actions):
+- `SUPABASE_URL` — `https://jqqoatzcfumimmboyspt.supabase.co`
+- `SUPABASE_ANON_KEY` — the anon/public key (same one `VITE_SUPABASE_ANON_KEY`
+  uses locally; safe to store as a secret, it's the client-side key).
+
+The workflow pings a trivial read every Monday to keep the free-tier project
+from auto-pausing after a week of inactivity, and can also be triggered
+manually (`workflow_dispatch`) to verify the secrets are wired correctly.
+Separately, `mark_stale_sessions_abandoned()` (added in 4.2) runs on its own
+weekly `pg_cron` schedule inside the database
+(`supabase/migrations/20260717120000_schedule_stale_session_cleanup.sql`) —
+unrelated to the GitHub Actions ping, no secrets or app code involved.
 
 ## Data pipeline (Python, mlbwar conda env)
 

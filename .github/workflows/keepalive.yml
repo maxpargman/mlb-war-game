@@ -1,0 +1,21 @@
+name: Supabase keep-alive
+
+# Slice 4.3: free-tier Supabase projects auto-pause after a week of no API
+# activity. This ping keeps the project alive with a trivial read -- no data
+# is touched. workflow_dispatch allows a manual run to verify the secrets
+# are wired up correctly without waiting for the schedule to fire.
+
+on:
+  schedule:
+    - cron: '0 12 * * 1' # every Monday at 12:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trivial Supabase query
+        run: |
+          curl -sf -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/daily_scores?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
