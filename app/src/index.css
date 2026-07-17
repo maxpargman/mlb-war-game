@@ -19,6 +19,16 @@ body {
 
 #root {
   min-height: 100vh;
+  /* Clears the fixed bottom ad banner (below) so real content never sits
+     underneath it -- keeps "no layout rework later" actually true instead
+     of just true until an ad shows up. */
+  padding-bottom: 50px;
+}
+
+@media (min-width: 728px) {
+  #root {
+    padding-bottom: 90px;
+  }
 }
 
 h1, h2 {
@@ -28,4 +38,47 @@ h1, h2 {
 
 p {
   margin: 0;
+}
+
+/* Slice 5.6: reserved zones for future ad units (bottom banner on all
+   viewports, side rails on desktop). Empty for now -- no ad code, no
+   network calls. Transparent and pointer-events:none so they never look
+   like a broken placeholder or intercept clicks while unused; a real ad
+   integration would drop content in and relax pointer-events, without
+   needing to touch any screen's layout. */
+.ad-banner-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@media (min-width: 728px) {
+  .ad-banner-bottom {
+    height: 90px;
+  }
+}
+
+.ad-rail {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 160px;
+  height: 600px;
+  max-height: 80vh;
+  pointer-events: none;
+  z-index: 10;
+  display: none;
+}
+
+.ad-rail-left { left: 0.5rem; }
+.ad-rail-right { right: 0.5rem; }
+
+/* Desktop only -- narrower viewports don't have room beside the ~900px
+   centered content columns without overlapping them. */
+@media (min-width: 1240px) {
+  .ad-rail { display: block; }
 }

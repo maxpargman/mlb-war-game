@@ -148,7 +148,7 @@ Reported missing by users: **Robin Yount (Brewers), Nick Kurtz (Athletics), Fran
 - [x] **5.3 Skip feature.** Daily challenge, **Medium and Hard only**: one skip per **game**, free, no penalty. Skipping replaces both the franchise AND the year window using a **pre-generated deterministic backup sequence** (seeded like the main schedule, so all players skipping round N land on the identical replacement). Backup picks must respect the no-repeat-franchise rule against franchises already shown that day. Add engine/scheduler tests.
 - [x] **5.4 Years in search dropdown.** In PickPanel results, show each player's stint years with the current franchise, computed at runtime from the (now gapless) data, formatted with gap awareness: "2001–2004, 2007–2010".
 - [x] **5.5 Instructions popup.** Auto-shows on first visit only (localStorage flag); closable; reopenable anytime via a persistent "How to play" button. Content: the goal, WAR in one sentence, snake-draft mechanics, the daily challenge. Keep it brief and mobile-clean.
-- [ ] **5.6 Ad layout reservation.** CSS-only: reserve a bottom banner zone (all viewports) and side-rail zones (desktop) so future ad units drop in without layout rework. **No ad code, no network integration.** Layout must remain clean with the zones empty.
+- [x] **5.6 Ad layout reservation.** CSS-only: reserve a bottom banner zone (all viewports) and side-rail zones (desktop) so future ad units drop in without layout rework. **No ad code, no network integration.** Layout must remain clean with the zones empty.
 
 ---
 
