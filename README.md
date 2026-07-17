@@ -1,4 +1,4 @@
-# MLB WAR Draft
+# The WAR Room
 
 A two-player hot-seat browser game where players draft real MLB players by Wins Above Replacement (WAR).
 

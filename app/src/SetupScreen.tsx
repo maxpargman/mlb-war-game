@@ -32,7 +32,7 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>MLB WAR Draft</h1>
+      <h1 style={styles.title}>The WAR Room</h1>
 
       {/* Game mode */}
       <div style={styles.card}>

@@ -39,7 +39,7 @@ export default function App() {
 
   return (
     <div style={{ padding: '1rem', fontFamily: 'monospace' }}>
-      <h1>MLB WAR Draft — data probe</h1>
+      <h1>The WAR Room — data probe</h1>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <label>

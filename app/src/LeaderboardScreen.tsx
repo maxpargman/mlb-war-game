@@ -14,7 +14,7 @@ interface Props {
 const MODE_LABEL: Record<DailyMode, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 function buildShareText(date: string, mode: DailyMode, score: number): string {
-  const header = `⚾ MLB WAR Draft — Daily ${MODE_LABEL[mode]}`
+  const header = `⚾ The WAR Room — Daily ${MODE_LABEL[mode]}`
   const dateStr = `📅 ${date}`
   const scoreStr = `🏆 ${score.toFixed(1)} WAR`
   const link = 'https://mlb-war-draft.vercel.app/'
