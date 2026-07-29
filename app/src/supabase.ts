@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getDeviceId } from './deviceId'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -18,8 +19,10 @@ export interface DailyScore {
 // Slice 4.1: writes no longer go directly to the table (RLS rejects them
 // now). The submit-score Edge Function recomputes the score server-side
 // from the lineup and only inserts if it's legitimate.
+// Slice 4.4: also sends the device UUID (same one used by game_sessions)
+// so a leaderboard row can be correlated back to a session/device.
 export async function submitScore(entry: Omit<DailyScore, 'id' | 'created_at'>): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('submit-score', { body: entry })
+  const { data, error } = await supabase.functions.invoke('submit-score', { body: { ...entry, deviceId: getDeviceId() } })
   if (error) {
     // FunctionsHttpError carries the function's JSON error body on .context
     const context = (error as { context?: Response }).context

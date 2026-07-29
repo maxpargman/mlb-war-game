@@ -28,6 +28,10 @@
 //      (this check alone can't close a race between two near-simultaneous
 //      requests; the DB constraint can).
 //
+// Slice 4.4: also stores the client's device id (same one game_sessions
+// uses) alongside the score, for correlation -- not validated beyond basic
+// shape, since it's metadata, not an anti-cheat control.
+//
 // Scope note (deliberate, see CC_PLAN.md slice 4.1 discussion): this
 // validates against the ORIGINAL 11 scheduled franchises from
 // generateDailySchedule only. It does not replay DailyDraftScreen.tsx's
@@ -189,6 +193,15 @@ function sanitizeUsername(raw: unknown): string {
   return s
 }
 
+// Slice 4.4: correlation metadata, not an anti-cheat control -- a missing
+// or malformed device id is stored as null rather than rejecting an
+// otherwise-legitimate submission.
+function sanitizeDeviceId(raw: unknown): string | null {
+  const s = String(raw ?? '').trim()
+  if (s.length === 0 || s.length > 100) return null
+  return s
+}
+
 class ValidationError extends Error {}
 
 function validateAndScore(lineup: unknown, schedule: DailyRound[], backups: DailyRound[], gameData: Season[]): number {
@@ -285,6 +298,7 @@ Deno.serve(async req => {
     if (!['easy', 'medium', 'hard'].includes(mode)) throw new ValidationError('Invalid mode.')
 
     const username = sanitizeUsername(body.username)
+    const deviceId = sanitizeDeviceId(body.deviceId)
 
     const gameData = await loadGameData()
     const schedule = generateDailySchedule(date, mode, gameData)
@@ -308,7 +322,7 @@ Deno.serve(async req => {
 
     const { error: insertError } = await admin
       .from('daily_scores')
-      .insert({ date, username, mode, score, lineup: body.lineup })
+      .insert({ date, username, mode, score, lineup: body.lineup, device_id: deviceId })
     if (insertError) {
       // Most likely the unique constraint catching a race the pre-check missed.
       const status = insertError.code === '23505' ? 409 : 500
