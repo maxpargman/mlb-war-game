@@ -176,19 +176,35 @@ itself whenever Lahman cuts a new release (pipeline v2 keeps these players anywa
 `python data/pipeline_v2/run_pipeline.py` after refreshing the raw Lahman files to pick up
 newly-added players.
 
-## Deferred UI tweaks
+## Post-Phase-5 fixes (not tied to a plan slice)
 
-- **Pick panel height** — the scrollable player list (`pick-list`) is currently `max-height: 40vh`.
-  User wants it shorter. Tune `max-height` in `layout.css` once overall layout is finalized.
+Two changes shipped after CC_PLAN.md's Phase 5 was fully checked off — not
+slices, just bug/UX fixes, so noting them here so they aren't lost:
 
-## Deferred: instructions / how to play page
-
-Add a page or modal explaining the game rules. Should cover:
-- What WAR is and why it matters
-- How the draft works (snake order, 11 rounds, one pick per position)
-- What each mode does (2-player, Daily Easy/Medium/Hard)
-- How scoring works (total WAR of your lineup wins)
-- Accessible from the setup screen (e.g. a "How to Play" link)
+- **Dead-end reroll bugfix.** Users occasionally got "Franchise X was not in
+  today's schedule or a valid skip" on Medium/Hard without ever using skip.
+  Root cause was two-fold: (1) `DailyDraftScreen`'s dead-end reroll used
+  `Math.random()`, which `submit-score` could never validate — fixed with a
+  deterministic reroll pool (`generateRerollPool` in `daily.ts`, `KEEP IN
+  SYNC` with `submit-score/index.ts`), same pattern as the skip feature but
+  uncapped and consumed via `GameState.rerollIndex`. (2) Deeper cause:
+  `generateDailySchedule` drew year windows from the whole dataset's range
+  regardless of franchise, so a young franchise (Arizona, founded 1998)
+  could get a window entirely before it existed — guaranteed zero eligible
+  players, not rare. Fixed with `franchiseYearBoundsMap` (`data.ts`),
+  constraining windows to each franchise's real active span.
+  - **Known residual trade-off:** the reroll pool is deterministic and
+    shared (same candidates for everyone that day), but consumed via a
+    running per-player counter, not indexed by round like skip is — the
+    server can't know a player's exact pick order, only their final
+    lineup. So two different players who each hit a dead end could
+    (rarely, now that the root cause is fixed) see different substitutes.
+    The primary 11-franchise schedule and skip are unaffected by this and
+    remain fully deterministic/identical for everyone.
+- **PickPanel search now shows unavailable players.** Previously a player
+  whose position was full or who'd already been drafted just vanished from
+  search results. Now they show grayed out with a reason ("Already
+  drafted" / "Position full") in place of the year range, not clickable.
 
 ## Deferred UI ideas
 
