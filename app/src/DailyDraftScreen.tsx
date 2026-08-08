@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { franchises } from './data'
 import { hasDraftablePlayer } from './engine'
 import { emptyLineup } from './types'
-import { generateDailySchedule, generateSkipBackups, todayString, type DailyRound, type DailyMode } from './daily'
+import { generateDailySchedule, generateSkipBackups, generateRerollPool, todayString, type DailyRound, type DailyMode } from './daily'
 import type { GameState, DraftPick, LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
@@ -25,6 +24,7 @@ function buildDailyState(rounds: DailyRound[]): GameState {
     turn: 0,
     phase: 'draft',
     skipUsed: false,
+    rerollIndex: 0,
   }
 }
 
@@ -44,22 +44,31 @@ function applySkip(state: GameState, backups: DailyRound[]): GameState {
   return { ...state, roundFranchises, roundRanges, skipUsed: true }
 }
 
-function rerollFranchise(state: GameState): GameState {
-  const used = new Set(state.roundFranchises.map(f => f.fid))
-  const remaining = franchises().filter(f => !used.has(f.fid))
-  if (remaining.length === 0) return state
-  const replacement = remaining[Math.floor(Math.random() * remaining.length)]
-  const next = [...state.roundFranchises]
-  next[state.round] = replacement
-  return { ...state, roundFranchises: next }
+// Bugfix (post-5.3): deterministic dead-end substitution -- consumes the
+// next entry from the precomputed reroll pool (see generateRerollPool in
+// daily.ts), instead of the old Math.random() pick the server could never
+// validate. Replaces both the franchise AND its year window (the pool
+// entry carries its own, unlike the old behavior of keeping the original
+// round's range), so hasDraftablePlayer checks the substitute's actual
+// eligible window below.
+function rerollFranchise(state: GameState, rerollPool: DailyRound[]): GameState {
+  if (state.rerollIndex >= rerollPool.length) return state
+  const replacement = rerollPool[state.rerollIndex]
+  const roundFranchises = [...state.roundFranchises]
+  roundFranchises[state.round] = { fid: replacement.fid, fn: replacement.fn }
+  const roundRanges = [...state.roundRanges]
+  roundRanges[state.round] = { yearLo: replacement.yearLo, yearHi: replacement.yearHi }
+  return { ...state, roundFranchises, roundRanges, rerollIndex: state.rerollIndex + 1 }
 }
 
-function resolveState(state: GameState): GameState {
+function resolveState(state: GameState, rerollPool: DailyRound[]): GameState {
   if (state.phase === 'done') return state
   let s = state
   let attempts = 0
   while (!hasDraftablePlayer(s, s.roundFranchises[s.round].fid) && attempts < 30) {
-    s = rerollFranchise(s)
+    const next = rerollFranchise(s, rerollPool)
+    if (next === s) break // pool exhausted -- give up rather than loop forever
+    s = next
     attempts++
   }
   return s
@@ -83,15 +92,25 @@ function advanceSinglePlayer(state: GameState, pick: DraftPick, slotIndex: numbe
 export default function DailyDraftScreen({ mode, onDone }: Props) {
   const [state, setState] = useState<GameState | null>(null)
 
+  // Pure function of (date, mode) -- identical whether starting fresh or
+  // resuming, and stable across re-renders via useMemo.
+  const schedule = useMemo(() => generateDailySchedule(todayString(), mode), [mode])
+
   // Skip (5.3, Medium/Hard only): a deterministic backup per round index,
-  // derived from the primary schedule -- pure function of (date, mode), so
-  // it's identical whether starting fresh or resuming, and unaffected by
-  // any skip/reroll already applied to live state.
+  // derived from the primary schedule -- unaffected by any skip/reroll
+  // already applied to live state.
   const backups = useMemo(() => {
     if (mode === 'easy') return []
-    const date = todayString()
-    return generateSkipBackups(date, mode, generateDailySchedule(date, mode))
-  }, [mode])
+    return generateSkipBackups(todayString(), mode, schedule)
+  }, [mode, schedule])
+
+  // Deterministic dead-end reroll pool (bugfix, post-5.3 -- see
+  // generateRerollPool in daily.ts). Computed for every mode: a dead end
+  // can happen even in Easy, just rarely, given its full year range.
+  const rerollPool = useMemo(
+    () => generateRerollPool(todayString(), mode, schedule, backups),
+    [mode, schedule, backups],
+  )
 
   // Lock-on-start with resume: a stored state for today's (date, mode) is
   // resumed as-is (already fully resolved -- no need to re-run resolveState,
@@ -100,9 +119,8 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
     const date = todayString()
     const stored = loadDailyState(date, mode)
     if (stored) { setState(stored); return }
-    const rounds = generateDailySchedule(date, mode)
-    setState(resolveState(buildDailyState(rounds)))
-  }, [mode])
+    setState(resolveState(buildDailyState(schedule), rerollPool))
+  }, [mode, schedule, rerollPool])
 
   // Persist after every change (including the final 'done' state) so a
   // reload always resumes -- or, once finished, redisplays the result
@@ -133,11 +151,11 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
   const totalWar = state.lineups[0].reduce((sum, sl) => sum + (sl.pick?.war ?? 0), 0)
 
   function handlePick(pick: DraftPick, slotIndex: number) {
-    setState(s => s ? resolveState(advanceSinglePlayer(s, pick, slotIndex)) : s)
+    setState(s => s ? resolveState(advanceSinglePlayer(s, pick, slotIndex), rerollPool) : s)
   }
 
   function handleSkip() {
-    setState(s => s ? resolveState(applySkip(s, backups)) : s)
+    setState(s => s ? resolveState(applySkip(s, backups), rerollPool) : s)
   }
 
   const canSkip = mode !== 'easy' && !state.skipUsed

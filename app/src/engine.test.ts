@@ -31,6 +31,7 @@ function baseState(): GameState {
     turn: 0,
     phase: 'draft',
     skipUsed: false,
+    rerollIndex: 0,
   }
 }
 

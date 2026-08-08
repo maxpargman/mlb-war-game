@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { __setDbForTesting, eligiblePlayers, franchises, yearBounds, stintYears, formatYearRanges } from './data'
+import { __setDbForTesting, eligiblePlayers, franchises, yearBounds, stintYears, formatYearRanges, franchiseYearBoundsMap } from './data'
 import { fixtureDb } from './testFixtures'
 
 beforeAll(() => {
@@ -53,6 +53,22 @@ describe('yearBounds', () => {
   it('returns the min and max year across the whole dataset', () => {
     const years = fixtureDb.map(r => r.y)
     expect(yearBounds()).toEqual({ min: Math.min(...years), max: Math.max(...years) })
+  })
+})
+
+describe('franchiseYearBoundsMap', () => {
+  it('returns the min/max year per franchise, not the whole dataset', () => {
+    const map = franchiseYearBoundsMap()
+    // F01: seasons in 2000-2005 only (see testFixtures.ts)
+    expect(map.get('F01')).toEqual({ min: 2000, max: 2005 })
+    // F02: seasons in 2010-2012 only
+    expect(map.get('F02')).toEqual({ min: 2010, max: 2012 })
+  })
+
+  it('has one entry per distinct franchise', () => {
+    const map = franchiseYearBoundsMap()
+    const distinctFids = new Set(fixtureDb.map(r => r.fid))
+    expect(map.size).toBe(distinctFids.size)
   })
 })
 

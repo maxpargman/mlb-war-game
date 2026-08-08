@@ -26,19 +26,20 @@ export const fixtureDb: Season[] = [
   { id: 'multi01', n: 'Two Way Guy', fid: 'F02', fn: 'Team 02', y: 2012, pos: '1B', war: 4.5 },
   { id: 'p07', n: 'Player Seven', fid: 'F02', fn: 'Team 02', y: 2010, pos: 'P', war: 2.0 },
 
-  // F03-F12: minimal filler franchises so franchise-draw logic (which needs a
-  // pool of at least 11 for a full 11-round schedule) has enough entries.
+  // F03-F12: filler franchises so franchise-draw logic (which needs a pool
+  // of at least 11 for a full 11-round schedule) has enough entries. Each
+  // spans the full 1990-2012 dataset range (two rows, same player) rather
+  // than a single year -- long enough to comfortably fit a medium/hard
+  // window without every round hitting the per-franchise clamp (see
+  // generateDailySchedule's franchise-year-bounds fix). Global min/max stay
+  // exactly 1990/2012 either way, which the "easy mode" test below depends on.
   ...Array.from({ length: 10 }, (_, i) => {
     const n = i + 3
     const fid = `F${String(n).padStart(2, '0')}`
-    return {
-      id: `filler${n}`,
-      n: `Filler Player ${n}`,
-      fid,
-      fn: `Team ${String(n).padStart(2, '0')}`,
-      y: 1990,
-      pos: 'OF' as const,
-      war: 1.0,
-    }
-  }),
+    const fn = `Team ${String(n).padStart(2, '0')}`
+    return [
+      { id: `filler${n}`, n: `Filler Player ${n}`, fid, fn, y: 1990, pos: 'OF' as const, war: 1.0 },
+      { id: `filler${n}`, n: `Filler Player ${n}`, fid, fn, y: 2012, pos: 'OF' as const, war: 1.0 },
+    ]
+  }).flat(),
 ]

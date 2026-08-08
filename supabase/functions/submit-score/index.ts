@@ -32,13 +32,15 @@
 // uses) alongside the score, for correlation -- not validated beyond basic
 // shape, since it's metadata, not an anti-cheat control.
 //
-// Scope note (deliberate, see CC_PLAN.md slice 4.1 discussion): this
-// validates against the ORIGINAL 11 scheduled franchises from
-// generateDailySchedule only. It does not replay DailyDraftScreen.tsx's
-// dead-end reroll logic (which uses plain Math.random(), not the seeded
-// generator, and depends on the player's own pick order) — a real
-// dead-end-reroll submission would be rejected by this check. Accepted as a
-// rare edge case rather than building full pick-history replay.
+// Bugfix (post-5.3, see generateRerollPool below): a pick may also match
+// the deterministic dead-end reroll pool, uncapped. This replaces an
+// earlier, narrower scope note -- the client's dead-end reroll used to be
+// plain Math.random(), which this function could never validate, rejecting
+// real submissions ("not in today's schedule or a valid skip") whenever a
+// dead end occurred. That was originally accepted as a rare edge case, but
+// turned out to be common enough in Medium/Hard's narrow year windows to
+// be a real, user-reported problem -- worth the fix rather than continuing
+// to accept it.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -99,27 +101,55 @@ function yearBounds(gameData: Season[]): { min: number; max: number } {
   return { min, max }
 }
 
+// Bugfix -- ported from app/src/daily.ts's franchiseYearBoundsMap (via
+// data.ts) -- KEEP IN SYNC.
+function franchiseYearBoundsMap(gameData: Season[]): Map<string, { min: number; max: number }> {
+  const map = new Map<string, { min: number; max: number }>()
+  for (const r of gameData) {
+    const existing = map.get(r.fid)
+    if (!existing) map.set(r.fid, { min: r.y, max: r.y })
+    else {
+      if (r.y < existing.min) existing.min = r.y
+      if (r.y > existing.max) existing.max = r.y
+    }
+  }
+  return map
+}
+
+// Bugfix -- ported from app/src/daily.ts's resolveWindow -- KEEP IN SYNC.
+// Constrains a medium/hard window to the given franchise's own active years
+// (a young franchise like Arizona, founded 1998, could otherwise get a
+// window entirely before it existed, guaranteeing zero eligible players).
+function resolveWindow(
+  fid: string,
+  mode: string,
+  rand: () => number,
+  datasetBounds: { min: number; max: number },
+  franchiseBounds: Map<string, { min: number; max: number }>,
+): { yearLo: number; yearHi: number } {
+  if (mode === 'easy') {
+    return { yearLo: datasetBounds.min, yearHi: datasetBounds.max }
+  }
+  const windowSize = mode === 'medium' ? 10 : 5
+  const fBounds = franchiseBounds.get(fid) ?? datasetBounds
+  const lo = Math.max(ERA_START, fBounds.min)
+  const span = Math.max(0, fBounds.max - lo - windowSize)
+  const yearLo = lo + Math.floor(rand() * (span + 1))
+  const yearHi = Math.min(yearLo + windowSize, fBounds.max)
+  return { yearLo, yearHi }
+}
+
 function generateDailySchedule(date: string, mode: string, gameData: Season[]): DailyRound[] {
   const rand = mulberry32(dateToSeed(date) + (MODE_OFFSET[mode] ?? 0))
-  const { min, max } = yearBounds(gameData)
+  const datasetBounds = yearBounds(gameData)
+  const franchiseBounds = franchiseYearBoundsMap(gameData)
   const pool = franchises(gameData)
   const rounds: DailyRound[] = []
 
   for (let i = 0; i < DAILY_ROUNDS; i++) {
     const idx = Math.floor(rand() * pool.length)
     const { fid, fn } = pool.splice(idx, 1)[0]
-
-    let yearLo: number
-    let yearHi: number
-    if (mode === 'easy') {
-      yearLo = min
-      yearHi = max
-    } else {
-      const windowSize = mode === 'medium' ? 10 : 5
-      const span = max - ERA_START - windowSize
-      yearLo = ERA_START + Math.floor(rand() * span)
-      yearHi = yearLo + windowSize
-    }
+    const { yearLo, yearHi } = resolveWindow(fid, mode, rand, datasetBounds, franchiseBounds)
     rounds.push({ fid, fn, yearLo, yearHi })
   }
   return rounds
@@ -131,7 +161,8 @@ const SKIP_SEED_OFFSET = 100
 
 function generateSkipBackups(date: string, mode: string, schedule: DailyRound[], gameData: Season[]): DailyRound[] {
   const rand = mulberry32(dateToSeed(date) + SKIP_SEED_OFFSET + (MODE_OFFSET[mode] ?? 0))
-  const { min, max } = yearBounds(gameData)
+  const datasetBounds = yearBounds(gameData)
+  const franchiseBounds = franchiseYearBoundsMap(gameData)
   const usedFids = new Set(schedule.map(r => r.fid))
   const pool = franchises(gameData).filter(f => !usedFids.has(f.fid))
   const backups: DailyRound[] = []
@@ -139,21 +170,35 @@ function generateSkipBackups(date: string, mode: string, schedule: DailyRound[],
   for (let i = 0; i < schedule.length && pool.length > 0; i++) {
     const idx = Math.floor(rand() * pool.length)
     const { fid, fn } = pool.splice(idx, 1)[0]
-
-    let yearLo: number
-    let yearHi: number
-    if (mode === 'easy') {
-      yearLo = min
-      yearHi = max
-    } else {
-      const windowSize = mode === 'medium' ? 10 : 5
-      const span = max - ERA_START - windowSize
-      yearLo = ERA_START + Math.floor(rand() * span)
-      yearHi = yearLo + windowSize
-    }
+    const { yearLo, yearHi } = resolveWindow(fid, mode, rand, datasetBounds, franchiseBounds)
     backups.push({ fid, fn, yearLo, yearHi })
   }
   return backups
+}
+
+// Bugfix (post-5.3) -- ported from app/src/daily.ts's generateRerollPool --
+// KEEP IN SYNC. See that file for the full explanation: the client's
+// dead-end reroll used to be plain Math.random(), which this function could
+// never validate, rejecting real submissions as "not in today's schedule or
+// a valid skip" whenever a dead end occurred -- common enough in
+// Medium/Hard's narrow year windows to be a real (not rare) problem.
+const REROLL_SEED_OFFSET = 200
+
+function generateRerollPool(date: string, mode: string, schedule: DailyRound[], skipBackups: DailyRound[], gameData: Season[]): DailyRound[] {
+  const rand = mulberry32(dateToSeed(date) + REROLL_SEED_OFFSET + (MODE_OFFSET[mode] ?? 0))
+  const datasetBounds = yearBounds(gameData)
+  const franchiseBounds = franchiseYearBoundsMap(gameData)
+  const exclude = new Set([...schedule.map(r => r.fid), ...skipBackups.map(r => r.fid)])
+  const pool = franchises(gameData).filter(f => !exclude.has(f.fid))
+  const result: DailyRound[] = []
+
+  while (pool.length > 0) {
+    const idx = Math.floor(rand() * pool.length)
+    const { fid, fn } = pool.splice(idx, 1)[0]
+    const { yearLo, yearHi } = resolveWindow(fid, mode, rand, datasetBounds, franchiseBounds)
+    result.push({ fid, fn, yearLo, yearHi })
+  }
+  return result
 }
 
 // --- end ported section ---
@@ -204,13 +249,14 @@ function sanitizeDeviceId(raw: unknown): string | null {
 
 class ValidationError extends Error {}
 
-function validateAndScore(lineup: unknown, schedule: DailyRound[], backups: DailyRound[], gameData: Season[]): number {
+function validateAndScore(lineup: unknown, schedule: DailyRound[], backups: DailyRound[], rerollPool: DailyRound[], gameData: Season[]): number {
   if (!Array.isArray(lineup) || lineup.length !== LINEUP_TEMPLATE.length) {
     throw new ValidationError('Lineup must have exactly 11 slots.')
   }
 
   const roundsByFid = new Map(schedule.map(r => [r.fid, r]))
   const backupsByFid = new Map(backups.map(r => [r.fid, r]))
+  const rerollByFid = new Map(rerollPool.map(r => [r.fid, r]))
   const usedFids = new Set<string>()
   const usedPlayerIds = new Set<string>()
   let skipCount = 0
@@ -227,10 +273,13 @@ function validateAndScore(lineup: unknown, schedule: DailyRound[], backups: Dail
     if (usedPlayerIds.has(pick.playerId)) throw new ValidationError(`Player ${pick.playerId} drafted more than once.`)
     usedPlayerIds.add(pick.playerId)
 
-    // A pick's franchise must be either a scheduled franchise, or (at most
-    // once per submission) the deterministic skip-backup for some round --
-    // it doesn't matter which round, since the backup pool already
-    // excludes every scheduled franchise (slice 5.3).
+    // A pick's franchise must be either a scheduled franchise, the
+    // deterministic skip-backup for some round (at most once per
+    // submission -- slice 5.3), or a deterministic dead-end reroll
+    // substitute (no cap -- a system-triggered substitution, not a player
+    // choice, so it doesn't count against the skip budget; see
+    // generateRerollPool). Doesn't matter which round any of these was
+    // "for" -- each pool already excludes every fid in the others.
     let round = roundsByFid.get(pick.fid)
     if (!round) {
       round = backupsByFid.get(pick.fid)
@@ -239,6 +288,7 @@ function validateAndScore(lineup: unknown, schedule: DailyRound[], backups: Dail
         if (skipCount > 1) throw new ValidationError('Only one skip is allowed per game.')
       }
     }
+    if (!round) round = rerollByFid.get(pick.fid)
     if (!round) throw new ValidationError(`Franchise ${pick.fid} was not in today's schedule or a valid skip.`)
     if (usedFids.has(pick.fid)) throw new ValidationError(`Franchise ${pick.fid} used more than once.`)
     usedFids.add(pick.fid)
@@ -305,7 +355,9 @@ Deno.serve(async req => {
     // Skip is Medium/Hard only (slice 5.3) -- easy gets no valid backups,
     // so any non-scheduled franchise there is rejected same as before.
     const backups = mode === 'easy' ? [] : generateSkipBackups(date, mode, schedule, gameData)
-    const score = validateAndScore(body.lineup, schedule, backups, gameData)
+    // Dead-end reroll (bugfix) can happen in any mode, so computed for all.
+    const rerollPool = generateRerollPool(date, mode, schedule, backups, gameData)
+    const score = validateAndScore(body.lineup, schedule, backups, rerollPool, gameData)
 
     // Fast pre-check (not race-safe on its own -- the DB unique constraint
     // from this slice's migration is the real guarantee).

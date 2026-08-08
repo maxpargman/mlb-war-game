@@ -33,6 +33,7 @@ function makeState(phase: 'draft' | 'done', takenIds: string[] = []): GameState 
     turn: 0,
     phase,
     skipUsed: false,
+    rerollIndex: 0,
   }
 }
 

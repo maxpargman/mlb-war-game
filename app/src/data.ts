@@ -131,3 +131,24 @@ export function yearBounds(): { min: number; max: number } {
   }
   return { min, max }
 }
+
+// Bugfix: earliest/latest years each franchise actually appears in the
+// dataset. generateDailySchedule (and the skip/reroll pools) used to draw a
+// medium/hard year window from the whole dataset's range regardless of
+// which franchise it landed on -- a young franchise (e.g. Arizona,
+// founded 1998) could get a window entirely before it existed, guaranteeing
+// zero eligible players. One pass over the whole dataset, computed once and
+// reused, rather than re-scanning per franchise per round.
+export function franchiseYearBoundsMap(): Map<string, { min: number; max: number }> {
+  const db = getDb()
+  const map = new Map<string, { min: number; max: number }>()
+  for (const r of db) {
+    const existing = map.get(r.fid)
+    if (!existing) map.set(r.fid, { min: r.y, max: r.y })
+    else {
+      if (r.y < existing.min) existing.min = r.y
+      if (r.y > existing.max) existing.max = r.y
+    }
+  }
+  return map
+}
