@@ -33,24 +33,36 @@ export default function PickPanel({ state, onPick }: Props) {
   const { yearLo, yearHi } = state.roundRanges[state.round]
   const lineup: LineupSlot[] = state.lineups[state.turn]
 
-  // All player-versions for this franchise + range, filtered to ones that fit an open slot
+  // Every player-version for this franchise + range, regardless of whether
+  // they're currently pickable -- search needs the full pool so a player
+  // whose position is full (or who's already drafted) still shows up,
+  // grayed out, instead of silently vanishing from results.
+  const allEligible = useMemo(() => eligiblePlayers(fid, yearLo, yearHi), [fid, yearLo, yearHi])
+
+  // Subset that fits an open slot right now -- what's actually clickable.
   const available = useMemo(() => {
-    const all = eligiblePlayers(fid, yearLo, yearHi)
-    return all.filter(
+    return allEligible.filter(
       p => !state.takenPlayerIds.has(p.id) && openSlotsFor(lineup, p.pos).length > 0
     )
-  }, [fid, yearLo, yearHi, state.takenPlayerIds, lineup])
+  }, [allEligible, state.takenPlayerIds, lineup])
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim())
-    const result = q ? available.filter(p => normalize(p.name).includes(q)) : available
+    const result = q ? allEligible.filter(p => normalize(p.name).includes(q)) : available
     const lastName = (name: string) => name.slice(name.lastIndexOf(' ') + 1)
     return [...result].sort((a, b) => lastName(a.name).localeCompare(lastName(b.name)))
-  }, [available, query])
+  }, [allEligible, available, query])
 
-  function handlePick(p: typeof available[0]) {
+  // Why a listed player can't be picked right now, or null if they can.
+  function unavailableReason(p: PlayerVersion): string | null {
+    if (state.takenPlayerIds.has(p.id)) return 'Already drafted'
+    if (openSlotsFor(lineup, p.pos).length === 0) return 'Position full'
+    return null
+  }
+
+  function handlePick(p: PlayerVersion) {
     const slots = openSlotsFor(lineup, p.pos)
-    if (slots.length === 0) return
+    if (slots.length === 0 || state.takenPlayerIds.has(p.id)) return
     setQuery('')
     setTimeout(() => inputRef.current?.focus(), 0)
     const pick: DraftPick = {
@@ -87,6 +99,7 @@ export default function PickPanel({ state, onPick }: Props) {
                 key={`${p.id}|${p.pos}`}
                 player={p}
                 years={formatYearRanges(stintYears(p.id, p.pos, fid, yearLo, yearHi))}
+                unavailableReason={unavailableReason(p)}
                 onPick={handlePick}
               />
             ))}
@@ -97,17 +110,29 @@ export default function PickPanel({ state, onPick }: Props) {
   )
 }
 
-function PlayerRow({ player: p, years, onPick }: { player: PlayerVersion; years: string; onPick: (p: PlayerVersion) => void }) {
-  const rowStyle: CSSProperties = styles.row
+function PlayerRow({
+  player: p,
+  years,
+  unavailableReason,
+  onPick,
+}: {
+  player: PlayerVersion
+  years: string
+  unavailableReason: string | null
+  onPick: (p: PlayerVersion) => void
+}) {
+  const unavailable = unavailableReason !== null
+  const rowStyle: CSSProperties = { ...styles.row, ...(unavailable ? styles.rowDisabled : {}) }
   return (
     <li
-      className="player-row"
+      className={unavailable ? 'player-row player-row-disabled' : 'player-row'}
       style={rowStyle}
-      onClick={() => onPick(p)}
+      onClick={unavailable ? undefined : () => onPick(p)}
+      aria-disabled={unavailable}
     >
-      <span style={styles.pos}>{p.pos}</span>
-      <span style={styles.name}>{p.name}</span>
-      {years && <span style={styles.years}>{years}</span>}
+      <span style={{ ...styles.pos, ...(unavailable ? styles.posDisabled : {}) }}>{p.pos}</span>
+      <span style={{ ...styles.name, ...(unavailable ? styles.nameDisabled : {}) }}>{p.name}</span>
+      <span style={styles.years}>{unavailable ? unavailableReason : years}</span>
     </li>
   )
 }
@@ -148,6 +173,9 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid #0f172a',
     transition: 'background 0.1s',
   },
+  rowDisabled: {
+    cursor: 'default',
+  },
   pos: {
     color: '#64748b',
     fontWeight: 700,
@@ -155,6 +183,9 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.05em',
     width: '2rem',
     flexShrink: 0,
+  },
+  posDisabled: {
+    color: '#3f4c5f',
   },
   name: {
     flex: 1,
@@ -165,6 +196,9 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+  nameDisabled: {
+    color: '#5b6577',
   },
   years: {
     flexShrink: 0,

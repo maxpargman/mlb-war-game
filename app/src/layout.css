@@ -61,3 +61,9 @@
 .player-row:hover {
   background: #263347;
 }
+
+/* Unavailable search result (already drafted / position full) -- no hover
+   highlight, so it doesn't look clickable. */
+.player-row-disabled:hover {
+  background: transparent;
+}
