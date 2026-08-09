@@ -2,16 +2,18 @@ import type { LineupSlot } from './types'
 import { COLORS, accentColor } from './theme'
 
 // Position of each of the first 8 lineup-template slots (C,1B,2B,3B,SS,OF,OF,OF)
-// on the diamond field, as percentages of the field's 250x230 box.
+// on the diamond field, as percentages of the field's 250x270 box. The OF row
+// sits lower than a true outfield would (13%/11%/13%, not flush to the top)
+// so a two-line wrapped name has room above it without bleeding past the edge.
 const FIELD_POS: { left: string; top: string }[] = [
   { left: '50%', top: '88%' }, // C
   { left: '82%', top: '50%' }, // 1B
   { left: '70%', top: '30%' }, // 2B
   { left: '18%', top: '50%' }, // 3B
   { left: '30%', top: '30%' }, // SS
-  { left: '15%', top: '10%' }, // OF
-  { left: '50%', top: '7%' },  // OF
-  { left: '85%', top: '10%' }, // OF
+  { left: '15%', top: '13%' }, // OF
+  { left: '50%', top: '11%' }, // OF
+  { left: '85%', top: '13%' }, // OF
 ]
 
 interface Props {
