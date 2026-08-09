@@ -7,6 +7,7 @@ import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
 import { useSessionTracking } from './useSessionTracking'
 import { todayString } from './daily'
+import { COLORS, accentColor } from './theme'
 
 interface Props {
   settings: GameSettings
@@ -14,6 +15,7 @@ interface Props {
 }
 
 const PLAYER_NAMES = ['Player 1', 'Player 2']
+const PLAYER_ACCENTS: ('green' | 'red')[] = ['green', 'red']
 
 function rerollFranchise(state: GameState): GameState {
   const used = new Set(state.roundFranchises.map(f => f.fid))
@@ -57,33 +59,48 @@ export default function DraftScreen({ settings, onEnd }: Props) {
   }
 
   const totals = state.lineups.map(l => l.reduce((sum, sl) => sum + (sl.pick?.war ?? 0), 0))
+  const turnColor = accentColor(PLAYER_ACCENTS[turn])
 
   return (
     <div style={styles.page}>
       {/* Top bar */}
       <div className="top-bar">
-        <span className="top-bar-left" style={styles.roundLabel}>Round {round + 1} / 11</span>
+        <span className="top-bar-left num" style={styles.roundLabel}>ROUND {round + 1} / 11</span>
         <div className="top-bar-center" style={styles.franchiseChip}>
-          <span style={styles.franchiseName}>{franchise.fn}</span>
+          <span className="display" style={styles.franchiseName}>{franchise.fn}</span>
           <span style={styles.yearRange}>{yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}</span>
         </div>
-        <span className="top-bar-right" style={styles.turnLabel}>{PLAYER_NAMES[turn]}'s pick</span>
+        <div className="top-bar-right" style={styles.turnGroup}>
+          <span style={{ ...styles.turnDot, background: turnColor }} />
+          <span style={{ ...styles.turnLabel, color: turnColor }}>{PLAYER_NAMES[turn]} on the clock</span>
+        </div>
       </div>
 
-      {/* Pick panel */}
-      <PickPanel state={state} onPick={handlePick} />
-
-      {/* Side-by-side lineup cards */}
-      <div className="lineup-row">
-        {state.lineups.map((lineup, pi) => (
+      {/* Player 1 field | search pool | Player 2 field */}
+      <div className="draft-grid">
+        <div className="draft-col-f1">
           <LineupCard
-            key={pi}
-            playerName={PLAYER_NAMES[pi]}
-            lineup={lineup}
-            totalWar={totals[pi]}
-            isActive={turn === pi}
+            playerName={PLAYER_NAMES[0]}
+            lineup={state.lineups[0]}
+            totalWar={totals[0]}
+            isActive={turn === 0}
+            accent={PLAYER_ACCENTS[0]}
           />
-        ))}
+        </div>
+
+        <div className="draft-col-pool">
+          <PickPanel state={state} onPick={handlePick} />
+        </div>
+
+        <div className="draft-col-f2">
+          <LineupCard
+            playerName={PLAYER_NAMES[1]}
+            lineup={state.lineups[1]}
+            totalWar={totals[1]}
+            isActive={turn === 1}
+            accent={PLAYER_ACCENTS[1]}
+          />
+        </div>
       </div>
     </div>
   )
@@ -92,34 +109,22 @@ export default function DraftScreen({ settings, onEnd }: Props) {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: '#0f172a',
-    color: '#f1f5f9',
-    fontFamily: 'system-ui, sans-serif',
     padding: '1.25rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '1rem',
+    gap: '1.5rem',
   },
-  roundLabel: { color: '#64748b', fontSize: '0.85rem' },
+  roundLabel: { color: COLORS.textMuted, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em' },
   franchiseChip: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '0.1rem',
   },
-  franchiseName: { fontWeight: 800, fontSize: '1.4rem' },
-  yearRange: { color: '#94a3b8', fontSize: '0.8rem' },
-  turnLabel: { fontWeight: 600, fontSize: '0.95rem', color: '#93c5fd' },
-  autoBtn: {
-    alignSelf: 'flex-end',
-    padding: '0.35rem 0.9rem',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    borderRadius: '6px',
-    border: '1px solid #334155',
-    background: 'transparent',
-    color: '#64748b',
-    cursor: 'pointer',
-  },
+  franchiseName: { fontSize: '1.9rem', color: COLORS.text, lineHeight: 1 },
+  yearRange: { color: COLORS.textMuted, fontSize: '0.75rem' },
+  turnGroup: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  turnDot: { width: 6, height: 6, borderRadius: '50%' },
+  turnLabel: { fontWeight: 600, fontSize: '0.85rem' },
 }

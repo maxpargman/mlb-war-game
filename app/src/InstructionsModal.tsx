@@ -2,6 +2,8 @@
 // localStorage flag, set the first time it's closed) and reopenable anytime
 // via a persistent button -- see SetupScreen.tsx.
 
+import { COLORS } from './theme'
+
 interface Props {
   onClose: () => void
 }
@@ -35,7 +37,7 @@ export default function InstructionsModal({ onClose }: Props) {
           <p style={styles.text}>Everyone gets the same 11 franchises each day, at Easy, Medium, or Hard difficulty. Submit your score to the leaderboard and see how you stack up.</p>
         </div>
 
-        <button onClick={onClose} style={styles.gotItBtn}>Got it</button>
+        <button onClick={onClose} className="btn btn-primary" style={styles.gotItBtn}>Got it</button>
       </div>
     </div>
   )
@@ -53,16 +55,16 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 200,
   },
   card: {
-    background: '#1e293b',
-    border: '1px solid #334155',
+    background: COLORS.bg,
+    border: `1px solid ${COLORS.border}`,
     borderRadius: '12px',
     padding: '1.5rem',
     width: '100%',
     maxWidth: '440px',
     maxHeight: '85vh',
     overflowY: 'auto',
-    color: '#f1f5f9',
-    fontFamily: 'system-ui, sans-serif',
+    color: COLORS.text,
+    fontFamily: "'Inter', sans-serif",
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
@@ -72,11 +74,11 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: { fontSize: '1.25rem', fontWeight: 800 },
+  title: { fontSize: '1.4rem', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.5px', textTransform: 'uppercase' },
   closeBtn: {
     background: 'transparent',
     border: 'none',
-    color: '#94a3b8',
+    color: COLORS.textDim,
     fontSize: '1.1rem',
     cursor: 'pointer',
     lineHeight: 1,
@@ -88,18 +90,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: '#93c5fd',
+    color: COLORS.green,
   },
-  text: { margin: 0, fontSize: '0.9rem', lineHeight: 1.5, color: '#cbd5e1' },
+  text: { margin: 0, fontSize: '0.9rem', lineHeight: 1.5, color: COLORS.textDim },
   gotItBtn: {
     marginTop: '0.25rem',
     padding: '0.65rem',
     fontSize: '0.95rem',
-    fontWeight: 700,
-    borderRadius: '8px',
-    border: 'none',
-    background: '#3b82f6',
-    color: '#fff',
-    cursor: 'pointer',
   },
 }

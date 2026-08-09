@@ -7,6 +7,7 @@ import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
 import { useSessionTracking } from './useSessionTracking'
 import { loadDailyState, saveDailyState } from './dailyStorage'
+import { COLORS } from './theme'
 
 interface Props {
   mode: DailyMode
@@ -166,24 +167,25 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
   return (
     <div style={styles.page}>
       <div className="top-bar">
-        <span className="top-bar-left" style={styles.meta}>
-          Round {round + 1} / 11
+        <span className="top-bar-left num" style={styles.meta}>
+          ROUND {round + 1} / 11
         </span>
         <div className="top-bar-center" style={styles.franchiseChip}>
-          <span style={styles.franchiseName}>{franchise.fn}</span>
+          <span className="display" style={styles.franchiseName}>{franchise.fn}</span>
           <span style={styles.yearRange}>
             {yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}
           </span>
         </div>
         <div className="top-bar-right" style={styles.rightGroup}>
-          <span style={styles.meta}>
+          <span className="num" style={styles.meta}>
             {mode.charAt(0).toUpperCase() + mode.slice(1)} · {todayString()}
           </span>
           {mode !== 'easy' && (
             <button
               onClick={handleSkip}
               disabled={!canSkip}
-              style={{ ...styles.skipBtn, ...(canSkip ? {} : styles.skipBtnDisabled) }}
+              className="btn btn-secondary"
+              style={styles.skipBtn}
             >
               {state.skipUsed ? 'Skip used' : '⟳ Skip franchise'}
             </button>
@@ -191,16 +193,16 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
         </div>
       </div>
 
-      <PickPanel state={panelState} onPick={handlePick} />
-
-      <div style={{ width: '100%', maxWidth: '900px' }}>
-        <LineupCard
-          playerName="Your Lineup"
-          lineup={state.lineups[0]}
-          totalWar={totalWar}
-          isActive
-        />
+      <div style={styles.poolWrap}>
+        <PickPanel state={panelState} onPick={handlePick} />
       </div>
+
+      <LineupCard
+        playerName="Your Lineup"
+        lineup={state.lineups[0]}
+        totalWar={totalWar}
+        isActive
+      />
     </div>
   )
 }
@@ -208,29 +210,20 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: '#0f172a',
-    color: '#f1f5f9',
-    fontFamily: 'system-ui, sans-serif',
     padding: '1.25rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '1rem',
+    gap: '1.5rem',
   },
-  meta: { color: '#64748b', fontSize: '0.85rem' },
+  meta: { color: COLORS.textMuted, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em' },
   franchiseChip: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem' },
-  franchiseName: { fontWeight: 800, fontSize: '1.4rem' },
-  yearRange: { color: '#94a3b8', fontSize: '0.8rem' },
+  franchiseName: { fontSize: '1.9rem', color: COLORS.text, lineHeight: 1 },
+  yearRange: { color: COLORS.textMuted, fontSize: '0.75rem' },
   rightGroup: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  poolWrap: { width: '100%', maxWidth: '440px' },
   skipBtn: {
     padding: '0.3rem 0.75rem',
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    borderRadius: '6px',
-    border: '1px solid #334155',
-    background: 'transparent',
-    color: '#93c5fd',
-    cursor: 'pointer',
+    fontSize: '0.7rem',
   },
-  skipBtnDisabled: { color: '#475569', cursor: 'default' },
 }

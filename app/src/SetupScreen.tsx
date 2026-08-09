@@ -4,6 +4,8 @@ import type { GameSettings, TimeRangeMode } from './types'
 import { todayString, type DailyMode } from './daily'
 import { getDailyStatus, type DailyStatus } from './dailyStorage'
 import InstructionsModal from './InstructionsModal'
+import { COLORS } from './theme'
+import warRoomLogo from './assets/war-room-logo.png'
 
 const INSTRUCTIONS_SEEN_KEY = 'mlbwar_instructions_seen'
 
@@ -72,94 +74,131 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
 
   return (
     <div style={styles.page}>
-      <button onClick={() => setShowInstructions(true)} style={styles.howToPlayBtn}>
-        ❓ How to play
+      <button onClick={() => setShowInstructions(true)} className="btn btn-secondary" style={styles.howToPlayBtn}>
+        How to play
       </button>
 
       {showInstructions && <InstructionsModal onClose={closeInstructions} />}
 
-      <h1 style={styles.title}>The WAR Room</h1>
+      <img src={warRoomLogo} alt="War Room" style={styles.logo} />
+      <div style={styles.tagline}>Snake-draft baseball history. Best lineup by total WAR wins.</div>
 
-      {/* Game mode */}
-      <div style={styles.card}>
-        <h2 style={styles.cardTitle}>Mode</h2>
-
-        <label style={styles.radio}>
-          <input type="radio" name="gameMode" checked={gameMode === '2player'} onChange={() => setGameMode('2player')} />
-          <span style={styles.radioTitle}>2-Player</span>
-          <span style={styles.desc}>Hot-seat draft on one device</span>
-        </label>
-
-        <label style={styles.radio}>
-          <input type="radio" name="gameMode" checked={gameMode === 'daily-easy'} onChange={() => setGameMode('daily-easy')} />
-          <span style={styles.radioTitle}>Daily — Easy</span>
-          <span style={styles.desc}>{statusText(dailyStatus.easy, "Today's challenge, all time")}</span>
-        </label>
-
-        <label style={styles.radio}>
-          <input type="radio" name="gameMode" checked={gameMode === 'daily-medium'} onChange={() => setGameMode('daily-medium')} />
-          <span style={styles.radioTitle}>Daily — Medium</span>
-          <span style={styles.desc}>{statusText(dailyStatus.medium, 'Post-1970, random 10-year windows')}</span>
-        </label>
-
-        <label style={styles.radio}>
-          <input type="radio" name="gameMode" checked={gameMode === 'daily-hard'} onChange={() => setGameMode('daily-hard')} />
-          <span style={styles.radioTitle}>Daily — Hard</span>
-          <span style={styles.desc}>{statusText(dailyStatus.hard, 'Post-1970, random 5-year windows')}</span>
-        </label>
+      {/* Mode */}
+      <div style={styles.section}>
+        <ModeRow
+          selected={gameMode === '2player'}
+          onClick={() => setGameMode('2player')}
+          title="2-Player Draft"
+          meta="Hot-seat, one device, 11 rounds"
+        />
+        <ModeRow
+          selected={gameMode === 'daily-easy'}
+          onClick={() => setGameMode('daily-easy')}
+          title="Daily — Easy"
+          meta={statusText(dailyStatus.easy, 'All time')}
+        />
+        <ModeRow
+          selected={gameMode === 'daily-medium'}
+          onClick={() => setGameMode('daily-medium')}
+          title="Daily — Medium"
+          meta={statusText(dailyStatus.medium, 'Post-1970, 10-yr window')}
+        />
+        <ModeRow
+          selected={gameMode === 'daily-hard'}
+          onClick={() => setGameMode('daily-hard')}
+          title="Daily — Hard"
+          meta={statusText(dailyStatus.hard, 'Post-1970, 5-yr window')}
+          last
+        />
       </div>
 
       {/* Time range — only shown for 2-player */}
       {gameMode === '2player' && (
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Time Range</h2>
-
-          <label style={styles.radio}>
-            <input type="radio" name="rangeMode" value="all" checked={rangeMode === 'all'} onChange={() => setRangeMode('all')} />
-            <span style={styles.radioTitle}>All Time</span>
-            <span style={styles.desc}>Any season in franchise history</span>
-          </label>
-
-          <label style={styles.radio}>
-            <input type="radio" name="rangeMode" value="custom" checked={rangeMode === 'custom'} onChange={() => setRangeMode('custom')} />
-            <span style={styles.radioTitle}>Custom Range</span>
-            <span style={styles.desc}>Only seasons within a chosen window</span>
-          </label>
-
-          {rangeMode === 'custom' && (
-            <div style={styles.rangeRow}>
-              <label style={styles.rangeLabel}>
-                From
-                <input
-                  type="number" min={min} max={max} value={yearLo}
-                  onChange={e => setYearLo(Number(e.target.value))}
-                  style={{ ...styles.yearInput, ...((loErr || rangeErr) ? styles.inputErr : {}) }}
-                />
-              </label>
-              <label style={styles.rangeLabel}>
-                to
-                <input
-                  type="number" min={min} max={max} value={yearHi}
-                  onChange={e => setYearHi(Number(e.target.value))}
-                  style={{ ...styles.yearInput, ...((loErr || rangeErr) ? styles.inputErr : {}) }}
-                />
-              </label>
-              {loErr && <span style={styles.errText}>Start year must be ≤ end year</span>}
-              {!loErr && rangeErr && <span style={styles.errText}>Years must be between {min} and {max}</span>}
-            </div>
-          )}
-
-          <label style={styles.radio}>
-            <input type="radio" name="rangeMode" value="hard" checked={rangeMode === 'hard'} onChange={() => setRangeMode('hard')} />
-            <span style={styles.radioTitle}>Hard Mode</span>
-            <span style={styles.desc}>Year range randomized each round</span>
-          </label>
+        <div style={styles.section}>
+          <ModeRow
+            selected={rangeMode === 'all'}
+            onClick={() => setRangeMode('all')}
+            title="All Time"
+            meta="Any season in franchise history"
+          />
+          <ModeRow
+            selected={rangeMode === 'custom'}
+            onClick={() => setRangeMode('custom')}
+            title="Custom Range"
+            meta="Only seasons within a chosen window"
+          >
+            {rangeMode === 'custom' && (
+              <div style={styles.rangeRow}>
+                <label style={styles.rangeLabel}>
+                  From
+                  <input
+                    type="number" min={min} max={max} value={yearLo}
+                    onChange={e => setYearLo(Number(e.target.value))}
+                    style={{ ...styles.yearInput, ...((loErr || rangeErr) ? styles.inputErr : {}) }}
+                  />
+                </label>
+                <label style={styles.rangeLabel}>
+                  to
+                  <input
+                    type="number" min={min} max={max} value={yearHi}
+                    onChange={e => setYearHi(Number(e.target.value))}
+                    style={{ ...styles.yearInput, ...((loErr || rangeErr) ? styles.inputErr : {}) }}
+                  />
+                </label>
+                {loErr && <span style={styles.errText}>Start year must be ≤ end year</span>}
+                {!loErr && rangeErr && <span style={styles.errText}>Years must be between {min} and {max}</span>}
+              </div>
+            )}
+          </ModeRow>
+          <ModeRow
+            selected={rangeMode === 'hard'}
+            onClick={() => setRangeMode('hard')}
+            title="Hard Mode"
+            meta="Year range randomized each round"
+            last
+          />
         </div>
       )}
 
-      <button onClick={handleStart} disabled={!canStart} style={styles.startBtn}>
+      <button onClick={handleStart} disabled={!canStart} className="btn btn-primary" style={styles.startBtn}>
         {startLabel}
       </button>
+    </div>
+  )
+}
+
+function ModeRow({
+  selected, onClick, title, meta, last, children,
+}: {
+  selected: boolean
+  onClick: () => void
+  title: string
+  meta: string
+  last?: boolean
+  children?: React.ReactNode
+}) {
+  return (
+    <div>
+      <div
+        className="list-row"
+        onClick={onClick}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          gap: '0.75rem',
+          padding: '14px 12px',
+          borderBottom: last ? 'none' : `1px solid ${COLORS.border}`,
+          cursor: 'pointer',
+          borderLeft: `2px solid ${selected ? COLORS.green : 'transparent'}`,
+        }}
+      >
+        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: selected ? COLORS.text : COLORS.textDim }}>
+          {title}
+        </span>
+        <span style={{ fontSize: '0.75rem', color: COLORS.textMuted, textAlign: 'right' }}>{meta}</span>
+      </div>
+      {children}
     </div>
   )
 }
@@ -170,90 +209,57 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '1.5rem',
-    fontFamily: 'system-ui, sans-serif',
-    background: '#0f172a',
-    color: '#f1f5f9',
-    gap: '0rem',
+    padding: '2.25rem 1.5rem 3rem',
   },
-  title: {
-    fontSize: '2rem',
-    fontWeight: 800,
-    marginBottom: '1.5rem',
-    letterSpacing: '-0.5px',
+  logo: {
+    height: 130,
+    width: 130,
+    objectFit: 'contain',
+    marginBottom: '0.4rem',
+  },
+  tagline: {
+    fontSize: '0.8rem',
+    color: COLORS.textDim,
+    marginBottom: '2.25rem',
+    textAlign: 'center',
   },
   howToPlayBtn: {
     position: 'fixed',
     top: '0.75rem',
     right: '0.75rem',
     zIndex: 100,
-    background: '#1e293b',
-    border: '1px solid #334155',
-    color: '#94a3b8',
-    borderRadius: '8px',
-    padding: '0.35rem 0.75rem',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  card: {
-    background: '#1e293b',
-    borderRadius: '12px',
-    padding: '1.25rem 2rem',
-    width: '100%',
-    maxWidth: '440px',
-    marginBottom: '1rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.65rem',
-  },
-  cardTitle: {
     fontSize: '0.75rem',
-    fontWeight: 600,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    color: '#94a3b8',
-    marginBottom: '0.1rem',
+    padding: '0.35rem 0.75rem',
   },
-  radio: {
-    display: 'grid',
-    gridTemplateColumns: 'auto 8rem 1fr',
-    alignItems: 'baseline',
-    gap: '0 0.6rem',
-    cursor: 'pointer',
-    fontSize: '0.95rem',
-    lineHeight: 1.6,
+  section: {
+    width: '100%',
+    maxWidth: '480px',
+    marginBottom: '0.5rem',
   },
-  radioTitle: { fontWeight: 700 },
-  desc: { color: '#94a3b8', fontWeight: 400, fontSize: '0.85rem' },
   rangeRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
-    marginLeft: '1.5rem',
+    padding: '0 12px 14px',
     flexWrap: 'wrap',
   },
-  rangeLabel: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' },
+  rangeLabel: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: COLORS.textDim },
   yearInput: {
     width: '5rem',
-    padding: '0.25rem 0.4rem',
-    borderRadius: '6px',
-    border: '1px solid #334155',
-    background: '#0f172a',
-    color: '#f1f5f9',
-    fontSize: '0.9rem',
+    padding: '0.3rem 0.4rem',
+    borderRadius: '4px',
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.fieldBg,
+    color: COLORS.text,
+    fontSize: '0.85rem',
   },
-  inputErr: { borderColor: '#ef4444' },
-  errText: { color: '#ef4444', fontSize: '0.8rem' },
+  inputErr: { borderColor: COLORS.error },
+  errText: { color: COLORS.error, fontSize: '0.75rem' },
   startBtn: {
-    padding: '0.75rem 2.5rem',
-    fontSize: '1rem',
-    fontWeight: 700,
-    borderRadius: '8px',
-    border: 'none',
-    background: '#3b82f6',
-    color: '#fff',
-    cursor: 'pointer',
+    width: '100%',
+    maxWidth: '480px',
+    padding: '15px',
+    fontSize: '0.95rem',
+    marginTop: '1.75rem',
   },
 }

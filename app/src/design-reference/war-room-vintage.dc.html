@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+body{margin:0;background:#141a22;font-family:'Inter',system-ui,sans-serif;color:#e8e2d3}
+*{box-sizing:border-box}
+.display{font-family:'Bebas Neue',sans-serif;text-transform:uppercase;letter-spacing:0.5px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+.tab{font-size:12px;font-weight:600;padding:14px 0;margin-right:24px;cursor:pointer;color:#6f6a5c;border-bottom:2px solid transparent}
+.tab.active{color:#e8e2d3;border-bottom-color:#4d7a52}
+.field{position:relative;width:250px;height:230px;margin:0 auto;background:#1c2a1e;border-radius:8px;overflow:visible}
+.pitchers{width:250px;margin:10px auto 0;display:flex;flex-direction:column;gap:3px}
+.pitchers .prow{display:flex;justify-content:space-between;font-size:11px;padding:3px 4px}
+.pitchers .plabel{color:#5c584c;font-size:9px;letter-spacing:0.5px;margin-bottom:2px}
+@media (max-width:700px){
+  .draft-grid{grid-template-columns:1fr 1fr !important;grid-template-rows:auto auto}
+  .draft-col-pool{grid-column:1 / span 2;grid-row:1;border-left:none !important;border-right:none !important;border-bottom:1px solid #20262f;padding:16px 14px !important}
+  .draft-col-f1{grid-column:1;grid-row:2;padding:16px 10px 8px !important}
+  .draft-col-f2{grid-column:2;grid-row:2;padding:16px 10px 8px !important;border-left:1px solid #20262f}
+  .draft-col-f1 .field,.draft-col-f2 .field{width:100%;max-width:190px;height:230px}
+  .draft-col-f1 .pitchers,.draft-col-f2 .pitchers{width:100%;max-width:190px}
+}
+
+.field::before{content:'';position:absolute;left:50%;top:55%;width:132px;height:132px;transform:translate(-50%,-50%) rotate(45deg);background:#3a3226}
+
+.slot{position:absolute;width:62px;transform:translate(-50%,-50%);text-align:center;z-index:1}
+.slot .tag{font-size:9px;font-weight:700;letter-spacing:0.5px;color:#5c584c}
+.slot .nm{font-size:11px;font-weight:600;margin-top:2px;line-height:1.15;color:#e8e2d3}
+.slot .wv{font-size:11px;font-weight:700;color:var(--side);margin-top:1px}
+.slot .dot{width:4px;height:4px;border-radius:50%;background:#3a4048;margin:0 auto}
+.slot.active .dot{background:#4d7a52;animation:pulse 1.6s infinite}
+.row-hover:hover{background:#181f28}
+.pos{font-size:10px;font-weight:600;color:#8b8676;width:24px}
+.btn{font-weight:600;font-size:13px;border:none;padding:12px 20px;cursor:pointer;font-family:'Inter',sans-serif;border-radius:3px}
+.btn-primary{background:#4d7a52;color:#141a22}
+.btn-primary:hover{background:#5f9463}
+.btn-secondary{background:transparent;color:#e8e2d3;border:1px solid #333a44}
+.btn-secondary:hover{border-color:#5c584c}
+input.search{background:transparent;border:none;border-bottom:1px solid #333a44;color:#e8e2d3;font-family:inherit;font-size:14px;padding:8px 2px;outline:none;width:100%}
+input.search:focus{border-bottom-color:#4d7a52}
+input.search::placeholder{color:#5c584c}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+  <div style="display:flex;align-items:center;padding:0 24px;gap:26px">
+<sc-if value="{{ showNavLogo }}" hint-placeholder-val="{{ false }}">
+      <img src="assets/war-room-logo.png" alt="War Room" style="height:48px;width:48px;object-fit:contain;margin:6px 0">
+    </sc-if>
+    <div style="display:flex">
+      <span class="tab {{ setupActive }}" onClick="{{ goSetup }}">Setup</span>
+      <span class="tab {{ draftActive }}" onClick="{{ goDraft }}">Draft</span>
+      <span class="tab {{ dailyActive }}" onClick="{{ goDaily }}">Daily</span>
+      <span class="tab {{ doneActive }}" onClick="{{ goDone }}">Result</span>
+    </div>
+  </div>
+  <div style="height:1px;background:#20262f"></div>
+
+  <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:36px 24px 50px">
+      <img src="assets/war-room-logo.png" alt="War Room" style="height:150px;width:150px;object-fit:contain;margin-bottom:6px">
+      <div style="font-size:13px;color:#8b8676;margin-top:2px;margin-bottom:36px">Snake-draft baseball history. Best lineup by total WAR wins.</div>
+
+      <div style="width:100%;max-width:520px">
+        <div onClick="{{ setP2p }}" style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-bottom:1px solid #20262f;cursor:pointer;border-left:2px solid {{ p2pBorder }};padding-left:12px">
+          <span style="font-weight:600;font-size:15px;color:{{ p2pFg }}">2-Player Draft</span>
+          <span style="font-size:12px;color:#6f6a5c">Hot-seat, one device, 11 rounds</span>
+        </div>
+        <div onClick="{{ setDaily }}" style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-bottom:1px solid #20262f;cursor:pointer;border-left:2px solid {{ dailyBorder }};padding-left:12px">
+          <span style="font-weight:600;font-size:15px;color:{{ dailyFg }}">Daily Challenge</span>
+          <span style="font-size:12px;color:#6f6a5c">Solo run against today's global board</span>
+        </div>
+      </div>
+
+      <sc-if value="{{ isDailyMode }}" hint-placeholder-val="{{ false }}">
+        <div style="width:100%;max-width:520px;margin-top:6px">
+          <div style="display:flex;justify-content:space-between;padding:11px 0 11px 12px;border-bottom:1px solid #191f27"><span style="font-weight:600;font-size:14px">Easy <span style="font-weight:400;color:#6f6a5c;font-size:12px">— all time</span></span><span class="num" style="font-size:11px;font-weight:700;color:{{ easyColor }}">{{ easyLine }}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:11px 0 11px 12px;border-bottom:1px solid #191f27"><span style="font-weight:600;font-size:14px">Medium <span style="font-weight:400;color:#6f6a5c;font-size:12px">— 10-yr window</span></span><span class="num" style="font-size:11px;font-weight:700;color:{{ mediumColor }}">{{ mediumLine }}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:11px 0 11px 12px"><span style="font-weight:600;font-size:14px">Hard <span style="font-weight:400;color:#6f6a5c;font-size:12px">— 5-yr window</span></span><span class="num" style="font-size:11px;font-weight:700;color:{{ hardColor }}">{{ hardLine }}</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isP2pMode }}" hint-placeholder-val="{{ true }}">
+        <div style="width:100%;max-width:520px;display:flex;gap:22px;padding:14px 0 0 12px">
+          <span style="font-size:13px;font-weight:600;color:#4d7a52">All Time</span>
+          <span style="font-size:13px;color:#6f6a5c">Custom Range</span>
+          <span style="font-size:13px;color:#6f6a5c">Hard Mode</span>
+        </div>
+      </sc-if>
+
+      <button class="btn btn-primary" style="width:100%;max-width:520px;padding:15px;margin-top:32px" onClick="{{ goDraft }}">{{ startLabel }}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDraft }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #20262f">
+      <div>
+        <div class="num" style="font-size:11px;color:#6f6a5c;font-weight:600">ROUND 4 / 11 · PICK 7</div>
+        <div class="display" style="font-size:34px;color:#e8e2d3;line-height:1">New York Yankees</div>
+        <div style="font-size:11px;color:#6f6a5c;margin-top:2px">1920 – 2024</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:6px;height:6px;border-radius:50%;background:#4d7a52;animation:pulse 1.6s infinite"></div>
+        <span style="font-size:13px;font-weight:600;color:#4d7a52">Player 2 on the clock</span>
+      </div>
+    </div>
+
+    <div class="draft-grid" style="flex:1;display:grid;grid-template-columns:1fr 1.3fr 1fr;min-height:0;max-width:100vw;overflow-x:hidden">
+
+      <div class="draft-col-f1" style="padding:22px 16px;--side:#4d7a52">
+        <div style="font-size:12px;font-weight:600;color:#4d7a52;text-align:center;margin-bottom:10px">Player 1</div>
+        <div class="field">
+          <div class="slot" style="left:15%;top:10%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:50%;top:7%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:85%;top:10%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot active" style="left:30%;top:30%"><div class="dot"></div><div class="tag" style="color:#4d7a52">SS</div><div class="nm" style="color:#4d7a52">on clock</div></div>
+          <div class="slot" style="left:70%;top:30%"><div class="dot"></div><div class="tag">2B</div></div>
+          <div class="slot" style="left:18%;top:50%"><div class="dot"></div><div class="tag">3B</div></div>
+          <div class="slot" style="left:82%;top:50%"><div class="tag">1B</div><div class="nm">Pujols</div><div class="wv">9.4</div></div>
+          <div class="slot" style="left:50%;top:88%"><div class="tag">C</div><div class="nm">Bench</div><div class="wv">9.7</div></div>
+        </div>
+        <div class="pitchers">
+          <div class="plabel">PITCHERS</div>
+          <div class="prow"><span>—</span><span>—</span></div>
+          <div class="prow"><span>—</span><span>—</span></div>
+          <div class="prow"><span>—</span><span>—</span></div>
+        </div>
+        <div class="display" style="text-align:center;font-size:26px;color:#4d7a52;margin-top:10px">19.1</div>
+      </div>
+
+      <div class="draft-col-pool" style="padding:22px 20px;border-left:1px solid #20262f;border-right:1px solid #20262f">
+        <input class="search" placeholder="Search 1920–2024 Yankees seasons…">
+        <div style="margin-top:10px">
+          <div class="row-hover" style="display:flex;align-items:baseline;gap:10px;padding:8px 4px;cursor:pointer"><span class="pos">OF</span><span style="flex:1;font-weight:600;font-size:14px">Mickey Mantle</span><span class="num" style="font-size:11px;color:#6f6a5c">1956</span><span class="num" style="font-weight:700;color:#4d7a52;font-size:13px">11.3</span></div>
+          <div class="row-hover" style="display:flex;align-items:baseline;gap:10px;padding:8px 4px;cursor:pointer"><span class="pos">OF</span><span style="flex:1;font-weight:600;font-size:14px">Babe Ruth</span><span class="num" style="font-size:11px;color:#6f6a5c">1923</span><span class="num" style="font-weight:700;color:#4d7a52;font-size:13px">14.1</span></div>
+          <div class="row-hover" style="display:flex;align-items:baseline;gap:10px;padding:8px 4px;cursor:pointer"><span class="pos">OF</span><span style="flex:1;font-weight:600;font-size:14px">Joe DiMaggio</span><span class="num" style="font-size:11px;color:#6f6a5c">1941</span><span class="num" style="font-weight:700;color:#4d7a52;font-size:13px">9.1</span></div>
+          <div class="row-hover" style="display:flex;align-items:baseline;gap:10px;padding:8px 4px;cursor:pointer"><span class="pos">1B</span><span style="flex:1;font-weight:600;font-size:14px">Lou Gehrig</span><span class="num" style="font-size:11px;color:#6f6a5c">1927</span><span class="num" style="font-weight:700;color:#4d7a52;font-size:13px">11.8</span></div>
+          <div class="row-hover" style="display:flex;align-items:baseline;gap:10px;padding:8px 4px;cursor:pointer"><span class="pos">SS</span><span style="flex:1;font-weight:600;font-size:14px">Derek Jeter</span><span class="num" style="font-size:11px;color:#6f6a5c">1999</span><span class="num" style="font-weight:700;color:#4d7a52;font-size:13px">7.7</span></div>
+        </div>
+      </div>
+
+      <div class="draft-col-f2" style="padding:22px 16px;--side:#7f3232">
+        <div style="font-size:12px;font-weight:600;color:#c58080;text-align:center;margin-bottom:10px">Player 2</div>
+        <div class="field">
+          <div class="slot" style="left:15%;top:10%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:50%;top:7%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:85%;top:10%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:30%;top:30%"><div class="tag">SS</div><div class="nm">Jeter</div><div class="wv">7.3</div></div>
+          <div class="slot" style="left:70%;top:30%"><div class="dot"></div><div class="tag">2B</div></div>
+          <div class="slot" style="left:18%;top:50%"><div class="dot"></div><div class="tag">3B</div></div>
+          <div class="slot" style="left:82%;top:50%"><div class="dot"></div><div class="tag">1B</div></div>
+          <div class="slot" style="left:50%;top:88%"><div class="tag">C</div><div class="nm">Berra</div><div class="wv">6.1</div></div>
+        </div>
+        <div class="pitchers">
+          <div class="plabel">PITCHERS</div>
+          <div class="prow"><span>—</span><span>—</span></div>
+          <div class="prow"><span>—</span><span>—</span></div>
+          <div class="prow"><span>—</span><span>—</span></div>
+        </div>
+        <div class="display" style="text-align:center;font-size:26px;color:#c58080;margin-top:10px">13.4</div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDaily }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:44px 24px 50px">
+      <div class="num" style="font-size:11px;color:#6f6a5c;font-weight:600">DAILY · MEDIUM · JUL 17</div>
+      <div class="display" style="font-size:60px;color:#4d7a52;line-height:1;margin:4px 0 28px">27.4 <span style="font-size:18px;color:#8b8676;font-family:Inter,sans-serif;font-weight:500;text-transform:none;letter-spacing:normal">WAR</span></div>
+
+      <div style="--side:#4d7a52">
+        <div class="field">
+          <div class="slot" style="left:15%;top:10%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:50%;top:7%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:85%;top:10%"><div class="dot"></div><div class="tag">OF</div></div>
+          <div class="slot" style="left:30%;top:30%"><div class="tag">SS</div><div class="nm">Jeter</div><div class="wv">7.7</div></div>
+          <div class="slot" style="left:70%;top:30%"><div class="dot"></div><div class="tag">2B</div></div>
+          <div class="slot" style="left:18%;top:50%"><div class="dot"></div><div class="tag">3B</div></div>
+          <div class="slot" style="left:82%;top:50%"><div class="tag">1B</div><div class="nm">Pujols</div><div class="wv">9.4</div></div>
+          <div class="slot" style="left:50%;top:88%"><div class="tag">C</div><div class="nm">Bench</div><div class="wv">9.7</div></div>
+        </div>
+        <div class="pitchers">
+          <div class="plabel">PITCHERS</div>
+          <div class="prow"><span>Clemens</span><span class="num" style="color:#4d7a52;font-weight:700">8.1</span></div>
+          <div class="prow"><span>Maddux</span><span class="num" style="color:#4d7a52;font-weight:700">7.4</span></div>
+          <div class="prow"><span>R. Johnson</span><span class="num" style="color:#4d7a52;font-weight:700">7.9</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;width:100%;max-width:400px;margin-top:26px">
+        <button class="btn btn-primary" style="flex:1">Share Score</button>
+        <button class="btn btn-secondary" style="flex:1" onClick="{{ goSetup }}">Play Again</button>
+      </div>
+
+      <div style="width:100%;max-width:400px;margin-top:30px">
+        <div style="font-size:12px;color:#6f6a5c;margin-bottom:6px">Today's Leaderboard</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #191f27"><span style="display:flex;gap:10px"><span class="num" style="color:#6f6a5c">1</span><span style="font-weight:700">You</span></span><span class="num" style="font-weight:700;color:#4d7a52">27.4</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #191f27"><span style="display:flex;gap:10px"><span class="num" style="color:#6f6a5c">2</span><span style="font-weight:600">Sam</span></span><span class="num" style="color:#8b8676">22.1</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="display:flex;gap:10px"><span class="num" style="color:#6f6a5c">3</span><span style="font-weight:600">Jordan</span></span><span class="num" style="color:#8b8676">19.6</span></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:48px 24px 50px">
+      <div class="num" style="font-size:11px;color:#6f6a5c;font-weight:600">DRAFT COMPLETE · FULL LINEUP</div>
+      <div class="display" style="font-size:40px;color:#4d7a52;margin:4px 0 4px">Player 1 Wins</div>
+      <div class="num" style="font-size:14px;color:#8b8676;margin-bottom:30px">103.5 – 97.1</div>
+
+      <div style="display:flex;flex-direction:column;gap:32px;width:100%;max-width:280px">
+        <div style="--side:#4d7a52">
+          <div style="height:21px;background:#1c2a1e;border-radius:8px 8px 0 0;width:250px;margin:0 auto"></div>
+          <div class="field" style="border-radius:0 0 8px 8px">
+            <div class="slot" style="left:15%;top:10%"><div class="tag">OF</div><div class="nm">Mantle</div><div class="wv">11.3</div></div>
+            <div class="slot" style="left:50%;top:7%"><div class="tag">OF</div><div class="nm">Ruth</div><div class="wv">14.1</div></div>
+            <div class="slot" style="left:85%;top:10%"><div class="tag">OF</div><div class="nm">DiMaggio</div><div class="wv">9.1</div></div>
+            <div class="slot" style="left:30%;top:30%"><div class="tag">SS</div><div class="nm">Jeter</div><div class="wv">7.7</div></div>
+            <div class="slot" style="left:70%;top:30%"><div class="tag">2B</div><div class="nm">Morgan</div><div class="wv">9.3</div></div>
+            <div class="slot" style="left:18%;top:50%"><div class="tag">3B</div><div class="nm">Schmidt</div><div class="wv">8.6</div></div>
+            <div class="slot" style="left:82%;top:50%"><div class="tag">1B</div><div class="nm">Pujols</div><div class="wv">9.4</div></div>
+            <div class="slot" style="left:50%;top:88%"><div class="tag">C</div><div class="nm">Bench</div><div class="wv">9.7</div></div>
+          </div>
+          <div class="pitchers">
+            <div class="plabel">PITCHERS</div>
+            <div class="prow"><span>Clemens</span><span class="num" style="color:#4d7a52;font-weight:700">8.1</span></div>
+            <div class="prow"><span>Maddux</span><span class="num" style="color:#4d7a52;font-weight:700">7.4</span></div>
+            <div class="prow"><span>R. Johnson</span><span class="num" style="color:#4d7a52;font-weight:700">7.9</span></div>
+          </div>
+          <div class="display" style="text-align:center;font-size:22px;color:#4d7a52;margin-top:8px">103.5</div>
+        </div>
+        <div style="--side:#7f3232">
+          <div style="height:21px;background:#1c2a1e;border-radius:8px 8px 0 0;width:250px;margin:0 auto"></div>
+          <div class="field" style="border-radius:0 0 8px 8px">
+            <div class="slot" style="left:15%;top:10%"><div class="tag">OF</div><div class="nm">Mays</div><div class="wv">11.0</div></div>
+            <div class="slot" style="left:50%;top:7%"><div class="tag">OF</div><div class="nm">Williams</div><div class="wv">10.9</div></div>
+            <div class="slot" style="left:85%;top:10%"><div class="tag">OF</div><div class="nm">Aaron</div><div class="wv">9.2</div></div>
+            <div class="slot" style="left:30%;top:30%"><div class="tag">SS</div><div class="nm">Ripken</div><div class="wv">8.4</div></div>
+            <div class="slot" style="left:70%;top:30%"><div class="tag">2B</div><div class="nm">Hornsby</div><div class="wv">9.4</div></div>
+            <div class="slot" style="left:18%;top:50%"><div class="tag">3B</div><div class="nm">Brett</div><div class="wv">8.0</div></div>
+            <div class="slot" style="left:82%;top:50%"><div class="tag">1B</div><div class="nm">Gehrig</div><div class="wv">11.8</div></div>
+            <div class="slot" style="left:50%;top:88%"><div class="tag">C</div><div class="nm">Berra</div><div class="wv">6.1</div></div>
+          </div>
+          <div class="pitchers">
+            <div class="plabel">PITCHERS</div>
+            <div class="prow"><span>Koufax</span><span class="num" style="color:#c58080;font-weight:700">8.1</span></div>
+            <div class="prow"><span>Seaver</span><span class="num" style="color:#c58080;font-weight:700">7.2</span></div>
+            <div class="prow"><span>Grove</span><span class="num" style="color:#c58080;font-weight:700">7.0</span></div>
+          </div>
+          <div class="display" style="text-align:center;font-size:22px;color:#c58080;margin-top:8px">97.1</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:32px" onClick="{{ goSetup }}">Play Again</button>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { phase: 'setup', gameMode: '2p' };
+  go(p) { this.setState({ phase: p }); }
+  renderVals() {
+    const p = this.state.phase;
+    const gm = this.state.gameMode;
+    const inProgress = this.props.dailyInProgress ?? 'medium';
+    const lineFor = (tier) => inProgress === tier ? 'IN PROGRESS' : 'OPEN';
+    const colorFor = (tier) => inProgress === tier ? '#4d7a52' : '#6f6a5c';
+    return {
+      showNavLogo: p !== 'setup',
+      isSetup: p === 'setup', isDraft: p === 'draft', isDaily: p === 'daily', isDone: p === 'done',
+      setupActive: p === 'setup' ? 'active' : '', draftActive: p === 'draft' ? 'active' : '',
+      dailyActive: p === 'daily' ? 'active' : '', doneActive: p === 'done' ? 'active' : '',
+      goSetup: () => this.go('setup'), goDraft: () => this.go('draft'),
+      goDaily: () => this.go('daily'), goDone: () => this.go('done'),
+      isP2pMode: gm === '2p', isDailyMode: gm === 'daily',
+      setP2p: () => this.setState({ gameMode: '2p' }), setDaily: () => this.setState({ gameMode: 'daily' }),
+      p2pBorder: gm === '2p' ? '#4d7a52' : 'transparent', p2pFg: gm === '2p' ? '#e8e2d3' : '#8b8676',
+      dailyBorder: gm === 'daily' ? '#4d7a52' : 'transparent', dailyFg: gm === 'daily' ? '#e8e2d3' : '#8b8676',
+      startLabel: gm === 'daily' ? 'Start Daily Challenge' : 'Start Draft',
+      easyColor: colorFor('easy'), mediumColor: colorFor('medium'), hardColor: colorFor('hard'),
+      easyLine: lineFor('easy'), mediumLine: lineFor('medium'), hardLine: lineFor('hard'),
+    };
+  }
+}
+</script>
+</body>
+</html>

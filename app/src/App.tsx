@@ -7,6 +7,7 @@ import DailyDraftScreen from './DailyDraftScreen'
 import LeaderboardScreen from './LeaderboardScreen'
 import LineupCard from './LineupCard'
 import type { GameSettings, GameState, LineupSlot } from './types'
+import { COLORS } from './theme'
 
 type AppPhase = 'loading' | 'setup' | 'draft' | 'done' | 'daily' | 'leaderboard'
 
@@ -24,8 +25,8 @@ export default function App() {
       .catch((e: unknown) => setError(String(e)))
   }, [])
 
-  if (error) return <p style={{ color: 'red', padding: '1rem' }}>Error: {error}</p>
-  if (phase === 'loading') return <p style={{ padding: '1rem', color: '#f1f5f9' }}>Loading data…</p>
+  if (error) return <p style={{ color: COLORS.error, padding: '1rem' }}>Error: {error}</p>
+  if (phase === 'loading') return <p style={{ padding: '1rem', color: COLORS.textDim }}>Loading data…</p>
 
   function goHome() {
     setPhase('setup')
@@ -35,7 +36,7 @@ export default function App() {
   }
 
   const homeBtn = phase !== 'setup' && (
-    <button onClick={goHome} style={homeStyle} title="Home">⌂</button>
+    <button onClick={goHome} className="btn btn-secondary" style={homeStyle} title="Home">⌂</button>
   )
 
   if (phase === 'setup') {
@@ -90,37 +91,49 @@ export default function App() {
 
   // 2-player done screen
   const lineups = finalState!.lineups
+  const accents: ('green' | 'red')[] = ['green', 'red']
 
   const totals = lineups.map(l => l.reduce((s, sl) => s + (sl.pick?.war ?? 0), 0))
-  const winner = totals[0] > totals[1] ? 'Player 1' : totals[1] > totals[0] ? 'Player 2' : 'Tie!'
+  const winner = totals[0] > totals[1] ? 'Player 1' : totals[1] > totals[0] ? 'Player 2' : null
+  const winnerColor = winner === 'Player 1' ? COLORS.green : winner === 'Player 2' ? COLORS.redLight : COLORS.text
 
   return (
     <>
     {homeBtn}
     <div style={{
-      minHeight: '100vh', background: '#0f172a', color: '#f1f5f9',
-      fontFamily: 'system-ui, sans-serif', padding: '1.25rem 1.5rem',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
+      minHeight: '100vh', padding: '2rem 1.5rem 3rem',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
     }}>
-      <div className="top-bar">
-        <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Draft complete</span>
-        <span style={{ fontWeight: 800, fontSize: '1.5rem', color: '#facc15' }}>{winner} wins!</span>
-        <button
-          onClick={() => { setSettings(null); setFinalState(null); setPhase('setup') }}
-          style={{
-            padding: '0.4rem 1.25rem', borderRadius: '6px',
-            border: '1px solid #334155', background: 'transparent',
-            color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem',
-          }}
-        >
-          Play again
-        </button>
+      <div className="num" style={{ color: COLORS.textMuted, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em' }}>
+        DRAFT COMPLETE · FULL LINEUP
       </div>
-      <div className="lineup-row">
+      <div className="display" style={{ fontSize: '2.25rem', color: winnerColor, margin: '0.2rem 0' }}>
+        {winner ? `${winner} Wins` : 'Tie!'}
+      </div>
+      <div className="num" style={{ fontSize: '0.85rem', color: COLORS.textDim, marginBottom: '1.75rem' }}>
+        {totals[0].toFixed(1)} – {totals[1].toFixed(1)}
+      </div>
+
+      <div className="lineup-stack">
         {lineups.map((lineup, pi) => (
-          <LineupCard key={pi} playerName={`Player ${pi + 1}`} lineup={lineup} totalWar={totals[pi]} />
+          <LineupCard
+            key={pi}
+            playerName={`Player ${pi + 1}`}
+            lineup={lineup}
+            totalWar={totals[pi]}
+            accent={accents[pi]}
+            capBar
+          />
         ))}
       </div>
+
+      <button
+        onClick={() => { setSettings(null); setFinalState(null); setPhase('setup') }}
+        className="btn btn-primary"
+        style={{ marginTop: '2rem' }}
+      >
+        Play Again
+      </button>
     </div>
     </>
   )
@@ -131,12 +144,7 @@ const homeStyle: React.CSSProperties = {
   top: '0.75rem',
   left: '0.75rem',
   zIndex: 100,
-  background: '#1e293b',
-  border: '1px solid #334155',
-  color: '#94a3b8',
-  borderRadius: '8px',
   padding: '0.35rem 0.65rem',
   fontSize: '1.1rem',
-  cursor: 'pointer',
   lineHeight: 1,
 }

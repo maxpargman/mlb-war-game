@@ -1,23 +1,15 @@
-/* Lineup cards: side-by-side on wide screens, stacked on mobile */
-.lineup-row {
+/* Stacked lineup field cards (Done / Leaderboard screens) */
+.lineup-stack {
   width: 100%;
-  max-width: 900px;
+  max-width: 280px;
   display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-@media (max-width: 600px) {
-  .lineup-row {
-    flex-direction: column;
-  }
+  flex-direction: column;
+  gap: 2rem;
 }
 
 /* Pick panel: fixed-height container reserves space for dropdown */
 .pick-panel-wrap {
   width: 100%;
-  max-width: 900px;
   height: 230px; /* search bar ~52px + gap + dropdown ~175px */
 }
 
@@ -59,11 +51,117 @@
 
 /* Player row hover */
 .player-row:hover {
-  background: #263347;
+  background: #181f28;
 }
 
 /* Unavailable search result (already drafted / position full) -- no hover
    highlight, so it doesn't look clickable. */
 .player-row-disabled:hover {
   background: transparent;
+}
+
+/* Generic hoverable list row (Setup screen mode/range options) */
+.list-row:hover {
+  background: #181f28;
+}
+
+/* — buttons — */
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  border: none;
+  padding: 12px 20px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.btn-primary { background: #4d7a52; color: #141a22; }
+.btn-primary:hover:not(:disabled) { background: #5f9463; }
+.btn-primary:disabled { opacity: 0.5; cursor: default; }
+.btn-secondary { background: transparent; color: #e8e2d3; border: 1px solid #333a44; }
+.btn-secondary:hover:not(:disabled) { border-color: #5c584c; }
+.btn-secondary:disabled { opacity: 0.5; cursor: default; }
+
+/* — underline search/text input — */
+.line-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #333a44;
+  color: #e8e2d3;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 2px;
+  outline: none;
+  width: 100%;
+}
+.line-input:focus { border-bottom-color: #4d7a52; }
+.line-input::placeholder { color: #5c584c; }
+
+/* — diamond field + position slots (LineupCard) — */
+.field {
+  position: relative;
+  width: 250px;
+  height: 230px;
+  margin: 0 auto;
+  background: #1c2a1e;
+  border-radius: 8px;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.field-cap {
+  height: 21px;
+  background: #1c2a1e;
+  border-radius: 8px 8px 0 0;
+  width: 250px;
+  margin: 0 auto;
+}
+.field-cap + .field {
+  border-radius: 0 0 8px 8px;
+}
+.field-diamond {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 132px;
+  height: 132px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #3a3226;
+}
+.slot {
+  position: absolute;
+  width: 62px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 1;
+}
+.slot .tag { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; color: #5c584c; }
+.slot .nm { font-size: 11px; font-weight: 600; margin-top: 2px; line-height: 1.15; color: #e8e2d3; }
+.slot .wv { font-size: 11px; font-weight: 700; margin-top: 1px; }
+.slot .dot { width: 4px; height: 4px; border-radius: 50%; background: #3a4048; margin: 0 auto; }
+.slot.active .dot { background: #4d7a52; animation: war-pulse 1.6s infinite; }
+
+.pitchers { width: 250px; margin: 10px auto 0; display: flex; flex-direction: column; gap: 3px; }
+.pitchers .prow { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 4px; }
+.pitchers .plabel { color: #5c584c; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 2px; }
+
+/* — draft screen: player field | search pool | player field — */
+.draft-grid {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  align-items: start;
+  gap: 0;
+}
+.draft-col-pool { padding: 0 20px; min-width: 0; }
+.draft-col-f1, .draft-col-f2 { padding: 0 16px; }
+
+@media (max-width: 780px) {
+  .draft-grid { grid-template-columns: 1fr 1fr; }
+  .draft-col-pool { grid-column: 1 / span 2; grid-row: 1; padding: 0 4px 20px; }
+  .draft-col-f1 { grid-column: 1; grid-row: 2; padding: 0 8px; }
+  .draft-col-f2 { grid-column: 2; grid-row: 2; padding: 0 8px; }
+  .draft-col-f1 .field, .draft-col-f2 .field,
+  .draft-col-f1 .pitchers, .draft-col-f2 .pitchers { width: 100%; max-width: 190px; }
+  .draft-col-f1 .field-cap, .draft-col-f2 .field-cap { width: 100%; max-width: 190px; }
 }

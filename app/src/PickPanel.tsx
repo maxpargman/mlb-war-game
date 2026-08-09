@@ -4,6 +4,7 @@ import type { PlayerVersion } from './data'
 import { eligiblePlayers, stintYears, formatYearRanges } from './data'
 import { openSlotsFor } from './engine'
 import type { GameState, DraftPick, LineupSlot } from './types'
+import { COLORS } from './theme'
 
 interface Props {
   state: GameState
@@ -77,23 +78,22 @@ export default function PickPanel({ state, onPick }: Props) {
     onPick(pick, slots[0])
   }
 
+  const yearLabel = yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`
+
   return (
     <div className="pick-panel-wrap">
-      <div style={styles.panel}>
       <input
         type="search"
         ref={inputRef}
-        placeholder="Search players…"
+        placeholder={`Search ${yearLabel} ${fn} seasons…`}
         value={query}
         onChange={e => setQuery(e.target.value)}
-        style={styles.search}
+        className="line-input"
         autoFocus
       />
-
-      </div>
       {query.trim() && filtered.length > 0 && (
-        <div className="pick-results" style={styles.results}>
-          <ul className="pick-list" style={styles.list}>
+        <div className="pick-results">
+          <ul className="pick-list">
             {filtered.map(p => (
               <PlayerRow
                 key={`${p.id}|${p.pos}`}
@@ -138,59 +138,31 @@ function PlayerRow({
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  panel: {
-    width: '100%',
-    maxWidth: '900px',
-  },
-  search: {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '0.65rem 1rem',
-    fontSize: '0.95rem',
-    background: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: '8px',
-    color: '#f1f5f9',
-    outline: 'none',
-  },
-  results: {
-    background: '#1e293b',
-    borderRadius: '8px',
-    border: '1px solid #334155',
-    overflow: 'hidden',
-  },
-  list: {
-    margin: 0,
-    padding: 0,
-    listStyle: 'none',
-  },
   row: {
     display: 'flex',
     alignItems: 'baseline',
     gap: '0.75rem',
-    padding: '0.5rem 1rem',
+    padding: '0.5rem 0.25rem',
     cursor: 'pointer',
-    borderBottom: '1px solid #0f172a',
-    transition: 'background 0.1s',
   },
   rowDisabled: {
     cursor: 'default',
   },
   pos: {
-    color: '#64748b',
+    color: COLORS.textMuted,
     fontWeight: 700,
-    fontSize: '0.7rem',
+    fontSize: '0.65rem',
     letterSpacing: '0.05em',
     width: '2rem',
     flexShrink: 0,
   },
   posDisabled: {
-    color: '#3f4c5f',
+    color: '#454138',
   },
   name: {
     flex: 1,
     minWidth: 0,
-    color: '#f1f5f9',
+    color: COLORS.text,
     fontWeight: 600,
     fontSize: '0.9rem',
     overflow: 'hidden',
@@ -198,33 +170,12 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   nameDisabled: {
-    color: '#5b6577',
+    color: COLORS.textMuted,
   },
   years: {
     flexShrink: 0,
-    color: '#64748b',
+    color: COLORS.textMuted,
     fontSize: '0.75rem',
     whiteSpace: 'nowrap',
-  },
-  war: {
-    color: '#34d399',
-    fontWeight: 700,
-    fontSize: '0.85rem',
-    width: '3rem',
-    textAlign: 'right',
-    flexShrink: 0,
-  },
-  year: {
-    color: '#64748b',
-    fontSize: '0.8rem',
-    width: '2.5rem',
-    textAlign: 'right',
-    flexShrink: 0,
-  },
-  empty: {
-    padding: '1rem',
-    color: '#64748b',
-    fontSize: '0.85rem',
-    margin: 0,
   },
 }
