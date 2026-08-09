@@ -72,7 +72,7 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
       {showInstructions && <InstructionsModal onClose={closeInstructions} />}
 
       <img src={warRoomLogo} alt="War Room" style={styles.logo} />
-      <div style={styles.tagline}>Snake-draft baseball history. Best lineup by total WAR wins.</div>
+      <div style={styles.tagline}>Draft the best team in baseball history</div>
 
       {/* Top-level mode toggle: Daily (default) | 2-Player */}
       <div style={styles.toggle}>
