@@ -142,7 +142,7 @@ export default function App() {
 const homeStyle: React.CSSProperties = {
   position: 'fixed',
   top: '0.75rem',
-  left: '0.75rem',
+  right: '0.75rem',
   zIndex: 100,
   padding: '0.35rem 0.65rem',
   fontSize: '1.1rem',

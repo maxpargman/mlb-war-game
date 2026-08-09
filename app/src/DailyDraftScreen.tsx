@@ -166,20 +166,23 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
 
   return (
     <div style={styles.page}>
-      <div className="top-bar">
-        <span className="top-bar-left num" style={styles.meta}>
-          ROUND {round + 1} / 11
-        </span>
-        <div className="top-bar-center" style={styles.franchiseChip}>
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <span className="num" style={styles.meta}>ROUND {round + 1} / 11</span>
           <span className="display" style={styles.franchiseName}>{franchise.fn}</span>
           <span style={styles.yearRange}>
             {yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}
           </span>
-        </div>
-        <div className="top-bar-right" style={styles.rightGroup}>
           <span className="num" style={styles.meta}>
             {mode.charAt(0).toUpperCase() + mode.slice(1)} · {todayString()}
           </span>
+        </div>
+
+        <div style={styles.headerRight}>
+          <div style={styles.scoreBlock}>
+            <span className="display num" style={styles.scoreValue}>{totalWar.toFixed(1)}</span>
+            <span style={styles.scoreUnit}>WAR</span>
+          </div>
           {mode !== 'easy' && (
             <button
               onClick={handleSkip}
@@ -198,10 +201,10 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
       </div>
 
       <LineupCard
-        playerName="Your Lineup"
         lineup={state.lineups[0]}
         totalWar={totalWar}
         isActive
+        showTotal={false}
       />
     </div>
   )
@@ -216,11 +219,26 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '1.5rem',
   },
+  header: {
+    width: '100%',
+    maxWidth: '480px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '1rem',
+  },
+  headerLeft: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.15rem' },
+  // marginRight pulls the score in from the header's right edge by a fixed
+  // amount -- keyed off the header's own width (not headerLeft's, which
+  // varies with the franchise name length) so its position doesn't drift
+  // round to round.
+  headerRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', marginTop: '1.5rem', marginRight: '5rem' },
   meta: { color: COLORS.textMuted, fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em' },
-  franchiseChip: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem' },
-  franchiseName: { fontSize: '1.9rem', color: COLORS.text, lineHeight: 1 },
-  yearRange: { color: COLORS.textMuted, fontSize: '0.75rem' },
-  rightGroup: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  franchiseName: { fontSize: '1.9rem', color: COLORS.text, lineHeight: 1, marginTop: '0.1rem' },
+  yearRange: { color: COLORS.textMuted, fontSize: '0.75rem', marginBottom: '0.1rem' },
+  scoreBlock: { display: 'flex', alignItems: 'baseline', gap: '0.4rem' },
+  scoreValue: { fontSize: '3.5rem', color: COLORS.green, lineHeight: 1 },
+  scoreUnit: { fontSize: '0.85rem', color: COLORS.textDim, fontFamily: "'Inter', sans-serif" },
   poolWrap: { width: '100%', maxWidth: '440px' },
   skipBtn: {
     padding: '0.3rem 0.75rem',

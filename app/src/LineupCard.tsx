@@ -15,24 +15,27 @@ const FIELD_POS: { left: string; top: string }[] = [
 ]
 
 interface Props {
-  playerName: string
+  playerName?: string
   lineup: LineupSlot[]
   totalWar: number
   isActive?: boolean    // pulse open slots when it's this player's turn
   accent?: 'green' | 'red'
   capBar?: boolean       // small header cap above the field (Done/Result screens)
+  showTotal?: boolean    // total-WAR number below the pitchers list (default true)
 }
 
-export default function LineupCard({ playerName, lineup, totalWar, isActive, accent = 'green', capBar }: Props) {
+export default function LineupCard({ playerName, lineup, totalWar, isActive, accent = 'green', capBar, showTotal = true }: Props) {
   const color = accentColor(accent)
   const fieldSlots = lineup.slice(0, 8)
   const pitchers = lineup.slice(8, 11)
 
   return (
     <div>
-      <div style={{ fontSize: 12, fontWeight: 600, color, textAlign: 'center', marginBottom: 10 }}>
-        {playerName}
-      </div>
+      {playerName && (
+        <div style={{ fontSize: 12, fontWeight: 600, color, textAlign: 'center', marginBottom: 10 }}>
+          {playerName}
+        </div>
+      )}
 
       {capBar && <div className="field-cap" />}
       <div className="field" style={capBar ? { borderRadius: '0 0 8px 8px' } : undefined}>
@@ -77,9 +80,11 @@ export default function LineupCard({ playerName, lineup, totalWar, isActive, acc
         ))}
       </div>
 
-      <div className="display num" style={{ textAlign: 'center', fontSize: 26, color, marginTop: 10 }}>
-        {totalWar.toFixed(1)}
-      </div>
+      {showTotal && (
+        <div className="display num" style={{ textAlign: 'center', fontSize: 26, color, marginTop: 10 }}>
+          {totalWar.toFixed(1)}
+        </div>
+      )}
     </div>
   )
 }
