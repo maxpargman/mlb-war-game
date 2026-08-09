@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { fetchLeaderboard, submitScore, type DailyScore } from './supabase'
-import { todayString, type DailyMode } from './daily'
+import { todayString, DAILY_MODE_LABEL, type DailyMode } from './daily'
 import type { LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import { COLORS } from './theme'
@@ -12,10 +12,8 @@ interface Props {
   onPlayAgain: () => void
 }
 
-const MODE_LABEL: Record<DailyMode, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
-
 function buildShareText(date: string, mode: DailyMode, score: number): string {
-  const header = `⚾ The WAR Room — Daily ${MODE_LABEL[mode]}`
+  const header = `⚾ The WAR Room — Daily ${DAILY_MODE_LABEL[mode]}`
   const dateStr = `📅 ${date}`
   const scoreStr = `🏆 ${score.toFixed(1)} WAR`
   const link = 'https://mlb-war-draft.vercel.app/'
@@ -74,7 +72,7 @@ export default function LeaderboardScreen({ mode, score, lineup, onPlayAgain }: 
   return (
     <div style={styles.page}>
       <div className="num" style={styles.meta}>
-        DAILY · {MODE_LABEL[mode].toUpperCase()} · {date}
+        DAILY · {DAILY_MODE_LABEL[mode].toUpperCase()} · {date}
       </div>
       <div className="display num" style={styles.scoreValue}>
         {score.toFixed(1)} <span style={styles.scoreUnit}>WAR</span>

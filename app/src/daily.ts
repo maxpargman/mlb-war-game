@@ -2,6 +2,15 @@ import { franchises, yearBounds, franchiseYearBoundsMap } from './data'
 
 export type DailyMode = 'easy' | 'medium' | 'hard'
 
+// Display names for the daily difficulties -- 'easy'/'medium'/'hard' stay as
+// the internal identifiers (storage keys, DB column values); only the
+// user-facing label changed.
+export const DAILY_MODE_LABEL: Record<DailyMode, string> = {
+  easy: 'Rookie',
+  medium: 'All-Star',
+  hard: 'HOF',
+}
+
 // Mulberry32 — fast seedable PRNG
 function mulberry32(seed: number) {
   return function () {

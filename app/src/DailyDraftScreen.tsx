@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { hasDraftablePlayer } from './engine'
 import { emptyLineup } from './types'
-import { generateDailySchedule, generateSkipBackups, generateRerollPool, todayString, type DailyRound, type DailyMode } from './daily'
+import { generateDailySchedule, generateSkipBackups, generateRerollPool, todayString, DAILY_MODE_LABEL, type DailyRound, type DailyMode } from './daily'
 import type { GameState, DraftPick, LineupSlot } from './types'
 import LineupCard from './LineupCard'
 import PickPanel from './PickPanel'
@@ -174,7 +174,7 @@ export default function DailyDraftScreen({ mode, onDone }: Props) {
             {yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}
           </span>
           <span className="num" style={styles.meta}>
-            {mode.charAt(0).toUpperCase() + mode.slice(1)} · {todayString()}
+            {DAILY_MODE_LABEL[mode]} · {todayString()}
           </span>
         </div>
 

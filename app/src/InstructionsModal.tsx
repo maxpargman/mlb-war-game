@@ -34,7 +34,7 @@ export default function InstructionsModal({ onClose }: Props) {
 
         <div style={styles.section}>
           <span style={styles.sectionTitle}>Daily Challenge</span>
-          <p style={styles.text}>Everyone gets the same 11 franchises each day, at Easy, Medium, or Hard difficulty. Submit your score to the leaderboard and see how you stack up.</p>
+          <p style={styles.text}>Everyone gets the same 11 franchises each day, at Rookie, All-Star, or HOF difficulty. Submit your score to the leaderboard and see how you stack up.</p>
         </div>
 
         <button onClick={onClose} className="btn btn-primary" style={styles.gotItBtn}>Got it</button>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { yearBounds } from './data'
 import type { GameSettings, TimeRangeMode } from './types'
-import { todayString, type DailyMode } from './daily'
+import { todayString, DAILY_MODE_LABEL, type DailyMode } from './daily'
 import { getDailyStatus, type DailyStatus } from './dailyStorage'
 import InstructionsModal from './InstructionsModal'
 import { COLORS } from './theme'
@@ -95,19 +95,19 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
           <ModeRow
             selected={dailyDifficulty === 'easy'}
             onClick={() => setDailyDifficulty('easy')}
-            title="Easy"
+            title={DAILY_MODE_LABEL.easy}
             meta={statusText(dailyStatus.easy, 'All time')}
           />
           <ModeRow
             selected={dailyDifficulty === 'medium'}
             onClick={() => setDailyDifficulty('medium')}
-            title="Medium"
+            title={DAILY_MODE_LABEL.medium}
             meta={statusText(dailyStatus.medium, 'Post-1970, 10-yr window')}
           />
           <ModeRow
             selected={dailyDifficulty === 'hard'}
             onClick={() => setDailyDifficulty('hard')}
-            title="Hard"
+            title={DAILY_MODE_LABEL.hard}
             meta={statusText(dailyStatus.hard, 'Post-1970, 5-yr window')}
             last
           />
@@ -117,14 +117,15 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
           <ModeRow
             selected={rangeMode === 'all'}
             onClick={() => setRangeMode('all')}
-            title="All Time"
+            title="Easy"
             meta="Any season in franchise history"
           />
           <ModeRow
             selected={rangeMode === 'custom'}
             onClick={() => setRangeMode('custom')}
-            title="Custom Range"
+            title="Custom"
             meta="Only seasons within a chosen window"
+            last
           >
             {rangeMode === 'custom' && (
               <div style={styles.rangeRow}>
@@ -149,13 +150,6 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
               </div>
             )}
           </ModeRow>
-          <ModeRow
-            selected={rangeMode === 'hard'}
-            onClick={() => setRangeMode('hard')}
-            title="Hard Mode"
-            meta="Year range randomized each round"
-            last
-          />
         </div>
       )}
 
