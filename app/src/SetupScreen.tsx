@@ -9,18 +9,11 @@ import warRoomLogo from './assets/war-room-logo.png'
 
 const INSTRUCTIONS_SEEN_KEY = 'mlbwar_instructions_seen'
 
-export type GameMode = '2player' | 'daily-easy' | 'daily-medium' | 'daily-hard'
+type TopMode = 'daily' | '2player'
 
 interface Props {
   onStart: (settings: GameSettings) => void
   onDaily: (mode: DailyMode) => void
-}
-
-const DAILY_MODE_OF: Record<GameMode, DailyMode | null> = {
-  '2player': null,
-  'daily-easy': 'easy',
-  'daily-medium': 'medium',
-  'daily-hard': 'hard',
 }
 
 function statusText(status: DailyStatus, fallback: string): string {
@@ -33,7 +26,8 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
   const { min, max: dataMax } = yearBounds()
   const max = Math.min(dataMax, new Date().getFullYear() - 1)
 
-  const [gameMode, setGameMode] = useState<GameMode>('2player')
+  const [topMode, setTopMode] = useState<TopMode>('daily')
+  const [dailyDifficulty, setDailyDifficulty] = useState<DailyMode>('easy')
   const [rangeMode, setRangeMode] = useState<TimeRangeMode>('all')
   const [yearLo, setYearLo] = useState(2000)
   const [yearHi, setYearHi] = useState(max)
@@ -57,18 +51,15 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
     hard: getDailyStatus(today, 'hard'),
   }
 
-  const selectedDailyMode = DAILY_MODE_OF[gameMode]
-  const selectedDailyStatus = selectedDailyMode ? dailyStatus[selectedDailyMode] : null
+  const selectedDailyStatus = topMode === 'daily' ? dailyStatus[dailyDifficulty] : null
   const startLabel = selectedDailyStatus?.kind === 'in_progress'
     ? 'Resume Daily Challenge'
     : selectedDailyStatus?.kind === 'done'
       ? 'View Results'
-      : gameMode === '2player' ? 'Start Draft' : 'Start Daily Challenge'
+      : topMode === '2player' ? 'Start Draft' : 'Start Daily Challenge'
 
   function handleStart() {
-    if (gameMode === 'daily-easy') { onDaily('easy'); return }
-    if (gameMode === 'daily-medium') { onDaily('medium'); return }
-    if (gameMode === 'daily-hard') { onDaily('hard'); return }
+    if (topMode === 'daily') { onDaily(dailyDifficulty); return }
     onStart({ mode: rangeMode, yearLo, yearHi })
   }
 
@@ -83,37 +74,45 @@ export default function SetupScreen({ onStart, onDaily }: Props) {
       <img src={warRoomLogo} alt="War Room" style={styles.logo} />
       <div style={styles.tagline}>Snake-draft baseball history. Best lineup by total WAR wins.</div>
 
-      {/* Mode */}
-      <div style={styles.section}>
-        <ModeRow
-          selected={gameMode === '2player'}
-          onClick={() => setGameMode('2player')}
-          title="2-Player Draft"
-          meta="Hot-seat, one device, 11 rounds"
-        />
-        <ModeRow
-          selected={gameMode === 'daily-easy'}
-          onClick={() => setGameMode('daily-easy')}
-          title="Daily — Easy"
-          meta={statusText(dailyStatus.easy, 'All time')}
-        />
-        <ModeRow
-          selected={gameMode === 'daily-medium'}
-          onClick={() => setGameMode('daily-medium')}
-          title="Daily — Medium"
-          meta={statusText(dailyStatus.medium, 'Post-1970, 10-yr window')}
-        />
-        <ModeRow
-          selected={gameMode === 'daily-hard'}
-          onClick={() => setGameMode('daily-hard')}
-          title="Daily — Hard"
-          meta={statusText(dailyStatus.hard, 'Post-1970, 5-yr window')}
-          last
-        />
+      {/* Top-level mode toggle: Daily (default) | 2-Player */}
+      <div style={styles.toggle}>
+        <button
+          onClick={() => setTopMode('daily')}
+          style={{ ...styles.toggleBtn, ...(topMode === 'daily' ? styles.toggleBtnActive : {}) }}
+        >
+          Daily
+        </button>
+        <button
+          onClick={() => setTopMode('2player')}
+          style={{ ...styles.toggleBtn, ...styles.toggleBtnRight, ...(topMode === '2player' ? styles.toggleBtnActive : {}) }}
+        >
+          2-Player
+        </button>
       </div>
 
-      {/* Time range — only shown for 2-player */}
-      {gameMode === '2player' && (
+      {topMode === 'daily' ? (
+        <div style={styles.section}>
+          <ModeRow
+            selected={dailyDifficulty === 'easy'}
+            onClick={() => setDailyDifficulty('easy')}
+            title="Easy"
+            meta={statusText(dailyStatus.easy, 'All time')}
+          />
+          <ModeRow
+            selected={dailyDifficulty === 'medium'}
+            onClick={() => setDailyDifficulty('medium')}
+            title="Medium"
+            meta={statusText(dailyStatus.medium, 'Post-1970, 10-yr window')}
+          />
+          <ModeRow
+            selected={dailyDifficulty === 'hard'}
+            onClick={() => setDailyDifficulty('hard')}
+            title="Hard"
+            meta={statusText(dailyStatus.hard, 'Post-1970, 5-yr window')}
+            last
+          />
+        </div>
+      ) : (
         <div style={styles.section}>
           <ModeRow
             selected={rangeMode === 'all'}
@@ -230,6 +229,34 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 100,
     fontSize: '0.75rem',
     padding: '0.35rem 0.75rem',
+  },
+  toggle: {
+    width: '100%',
+    maxWidth: '480px',
+    display: 'flex',
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '8px',
+    overflow: 'hidden',
+    marginBottom: '1.5rem',
+  },
+  toggleBtn: {
+    flex: 1,
+    padding: '14px',
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    fontFamily: "'Inter', sans-serif",
+    background: 'transparent',
+    color: COLORS.textDim,
+    border: 'none',
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
+  toggleBtnRight: {
+    borderLeft: `1px solid ${COLORS.border}`,
+  },
+  toggleBtnActive: {
+    background: COLORS.green,
+    color: COLORS.bg,
   },
   section: {
     width: '100%',
