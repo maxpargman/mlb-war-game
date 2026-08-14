@@ -144,24 +144,3 @@
 .pitchers .prow { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 4px; }
 .pitchers .plabel { color: #5c584c; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 2px; }
 
-/* — draft screen: player field | search pool | player field — */
-.draft-grid {
-  width: 100%;
-  max-width: 1100px;
-  display: grid;
-  grid-template-columns: 1fr 1.3fr 1fr;
-  align-items: start;
-  gap: 0;
-}
-.draft-col-pool { padding: 0 20px; min-width: 0; }
-.draft-col-f1, .draft-col-f2 { padding: 0 16px; }
-
-@media (max-width: 780px) {
-  .draft-grid { grid-template-columns: 1fr 1fr; }
-  .draft-col-pool { grid-column: 1 / span 2; grid-row: 1; padding: 0 4px 20px; }
-  .draft-col-f1 { grid-column: 1; grid-row: 2; padding: 0 8px; }
-  .draft-col-f2 { grid-column: 2; grid-row: 2; padding: 0 8px; }
-  .draft-col-f1 .field, .draft-col-f2 .field,
-  .draft-col-f1 .pitchers, .draft-col-f2 .pitchers { width: 100%; max-width: 190px; }
-  .draft-col-f1 .field-cap, .draft-col-f2 .field-cap { width: 100%; max-width: 190px; }
-}

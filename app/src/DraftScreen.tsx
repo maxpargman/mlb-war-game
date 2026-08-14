@@ -71,37 +71,38 @@ export default function DraftScreen({ settings, onEnd }: Props) {
           <span style={styles.yearRange}>{yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}</span>
         </div>
         <div className="top-bar-right" style={styles.turnGroup}>
-          <span style={{ ...styles.turnDot, background: turnColor }} />
+          <div style={styles.scoreRow}>
+            {PLAYER_NAMES.map((name, i) => (
+              <span
+                key={name}
+                className="num"
+                style={{
+                  ...styles.scoreItem,
+                  color: accentColor(PLAYER_ACCENTS[i]),
+                  opacity: turn === i ? 1 : 0.4,
+                }}
+              >
+                {name} {totals[i].toFixed(1)}
+              </span>
+            ))}
+          </div>
           <span style={{ ...styles.turnLabel, color: turnColor }}>{PLAYER_NAMES[turn]} on the clock</span>
         </div>
       </div>
 
-      {/* Player 1 field | search pool | Player 2 field */}
-      <div className="draft-grid">
-        <div className="draft-col-f1">
-          <LineupCard
-            playerName={PLAYER_NAMES[0]}
-            lineup={state.lineups[0]}
-            totalWar={totals[0]}
-            isActive={turn === 0}
-            accent={PLAYER_ACCENTS[0]}
-          />
-        </div>
-
-        <div className="draft-col-pool">
-          <PickPanel state={state} onPick={handlePick} />
-        </div>
-
-        <div className="draft-col-f2">
-          <LineupCard
-            playerName={PLAYER_NAMES[1]}
-            lineup={state.lineups[1]}
-            totalWar={totals[1]}
-            isActive={turn === 1}
-            accent={PLAYER_ACCENTS[1]}
-          />
-        </div>
+      {/* Only the active drafter's field is shown -- keeps the layout single-column
+          like Daily mode instead of two lineups competing for space. */}
+      <div style={styles.poolWrap}>
+        <PickPanel state={state} onPick={handlePick} />
       </div>
+
+      <LineupCard
+        playerName={PLAYER_NAMES[turn]}
+        lineup={state.lineups[turn]}
+        totalWar={totals[turn]}
+        isActive
+        accent={PLAYER_ACCENTS[turn]}
+      />
     </div>
   )
 }
@@ -124,7 +125,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   franchiseName: { fontSize: '1.9rem', color: COLORS.text, lineHeight: 1 },
   yearRange: { color: COLORS.textMuted, fontSize: '0.75rem' },
-  turnGroup: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-  turnDot: { width: 6, height: 6, borderRadius: '50%' },
+  // marginRight clears the fixed Home button (top-right corner, see App.tsx)
+  turnGroup: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', marginRight: '2.5rem' },
+  scoreRow: { display: 'flex', alignItems: 'center', gap: '0.6rem' },
+  scoreItem: { fontWeight: 700, fontSize: '0.8rem', transition: 'opacity 0.2s' },
   turnLabel: { fontWeight: 600, fontSize: '0.85rem' },
+  poolWrap: { width: '100%', maxWidth: '440px' },
 }
