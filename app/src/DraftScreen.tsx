@@ -41,6 +41,10 @@ function resolveState(state: GameState): GameState {
 
 export default function DraftScreen({ settings, onEnd }: Props) {
   const [state, setState] = useState<GameState>(() => resolveState(initGame(settings)))
+  // Which player's field is on screen -- independent of whose turn it is,
+  // so picking doesn't yank the view out from under someone checking the
+  // other lineup. Defaults to the active drafter on mount only.
+  const [viewedPlayer, setViewedPlayer] = useState<0 | 1>(state.turn)
 
   useEffect(() => {
     if (state.phase === 'done') onEnd(state)
@@ -71,38 +75,45 @@ export default function DraftScreen({ settings, onEnd }: Props) {
           <span style={styles.yearRange}>{yearLo === yearHi ? yearLo : `${yearLo}–${yearHi}`}</span>
         </div>
         <div className="top-bar-right" style={styles.turnGroup}>
-          <div style={styles.scoreRow}>
-            {PLAYER_NAMES.map((name, i) => (
-              <span
-                key={name}
-                className="num"
-                style={{
-                  ...styles.scoreItem,
-                  color: accentColor(PLAYER_ACCENTS[i]),
-                  opacity: turn === i ? 1 : 0.4,
-                }}
-              >
-                {name} {totals[i].toFixed(1)}
-              </span>
-            ))}
-          </div>
+          <span style={{ ...styles.turnDot, background: turnColor }} />
           <span style={{ ...styles.turnLabel, color: turnColor }}>{PLAYER_NAMES[turn]} on the clock</span>
         </div>
       </div>
 
-      {/* Only the active drafter's field is shown -- keeps the layout single-column
+      {/* Only one field is shown at a time -- keeps the layout single-column
           like Daily mode instead of two lineups competing for space. */}
       <div style={styles.poolWrap}>
         <PickPanel state={state} onPick={handlePick} />
       </div>
 
-      <LineupCard
-        playerName={PLAYER_NAMES[turn]}
-        lineup={state.lineups[turn]}
-        totalWar={totals[turn]}
-        isActive
-        accent={PLAYER_ACCENTS[turn]}
-      />
+      <div style={styles.fieldGroup}>
+        {/* Tabs to pick which lineup is displayed -- click a name to switch. */}
+        <div style={styles.scoreRow}>
+          {PLAYER_NAMES.map((name, i) => (
+            <button
+              key={name}
+              onClick={() => setViewedPlayer(i as 0 | 1)}
+              className="num"
+              style={{
+                ...styles.scoreItem,
+                color: accentColor(PLAYER_ACCENTS[i]),
+                opacity: viewedPlayer === i ? 1 : 0.4,
+                textDecoration: viewedPlayer === i ? 'underline' : 'none',
+                textUnderlineOffset: '3px',
+              }}
+            >
+              {name} {totals[i].toFixed(1)}
+            </button>
+          ))}
+        </div>
+
+        <LineupCard
+          lineup={state.lineups[viewedPlayer]}
+          totalWar={totals[viewedPlayer]}
+          isActive={viewedPlayer === turn}
+          accent={PLAYER_ACCENTS[viewedPlayer]}
+        />
+      </div>
     </div>
   )
 }
@@ -125,10 +136,20 @@ const styles: Record<string, React.CSSProperties> = {
   },
   franchiseName: { fontSize: '1.9rem', color: COLORS.text, lineHeight: 1 },
   yearRange: { color: COLORS.textMuted, fontSize: '0.75rem' },
-  // marginRight clears the fixed Home button (top-right corner, see App.tsx)
-  turnGroup: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', marginRight: '2.5rem' },
-  scoreRow: { display: 'flex', alignItems: 'center', gap: '0.6rem' },
-  scoreItem: { fontWeight: 700, fontSize: '0.8rem', transition: 'opacity 0.2s' },
+  turnGroup: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  turnDot: { width: 6, height: 6, borderRadius: '50%' },
   turnLabel: { fontWeight: 600, fontSize: '0.85rem' },
   poolWrap: { width: '100%', maxWidth: '440px' },
+  fieldGroup: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' },
+  scoreRow: { display: 'flex', alignItems: 'center', gap: '0.8rem' },
+  scoreItem: {
+    fontWeight: 700,
+    fontSize: '0.8rem',
+    transition: 'opacity 0.2s',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
 }
